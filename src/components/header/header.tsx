@@ -16,6 +16,7 @@ import { getUserProfileUseCase } from "@/server/use-cases/users";
 import { ModeToggle } from "./mode-toggle";
 import { MenuButton } from "./menu-button";
 import { User } from "@/server/db/schema";
+import Image from "next/image";
 
 const profilerLoader = cache(getUserProfileUseCase);
 
@@ -23,12 +24,13 @@ export async function Header() {
   const user = await getCurrentUser();
 
   return (
-    <div className="border-b py-4">
+    <div className="select-none border-b py-4">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-xl">
-            <Lightbulb />
-            <div className="hidden md:block">APP</div>
+            <div className="">
+              <Image width={50} height={50} alt="skull-icon" src="/skull.png" />
+            </div>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -38,8 +40,8 @@ export async function Header() {
                 asChild
                 className="flex items-center justify-center gap-2"
               >
-                <Link href={"/dashboard"}>
-                  <LayoutDashboard className="h-4 w-4" /> Dashboard
+                <Link href={"/tao-video"}>
+                  <LayoutDashboard className="h-4 w-4" /> Tạo video
                 </Link>
               </Button>
             )}

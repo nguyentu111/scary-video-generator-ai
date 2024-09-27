@@ -21,12 +21,16 @@ const libre_franklin = Libre_Franklin({
 });
 
 export const metadata: Metadata = {
-  title: "Drizzle trpc lucia auth template",
+  title: "Tạo video kinh dị với AI",
   icons: [
     { rel: "icon", type: "image/png", sizes: "48x48", url: "/favicon.ico" },
   ],
-  keywords: "template",
-  description: "Drizzle trpc lucia auth template",
+  keywords: [
+    "Scary story generator",
+    "Scary story generator",
+    "Scary video ai",
+  ],
+  description: "Tạo video kinh dị với AI",
 };
 
 export default async function RootLayout({
@@ -35,7 +39,7 @@ export default async function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body
         className={cn(
           "min-h-screen bg-background antialiased",
