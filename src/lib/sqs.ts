@@ -1,6 +1,10 @@
 import "server-only";
 import { env } from "@/env";
-import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import {
+  MessageAttributeValue,
+  SendMessageCommand,
+  SQSClient,
+} from "@aws-sdk/client-sqs";
 
 const client = new SQSClient({
   region: env.AWS_REGION,
@@ -10,24 +14,14 @@ const client = new SQSClient({
   },
 });
 const SQS_QUEUE_URL = env.AWS_QUEUE_URL;
-export const sendSqsMessage = async (message: string) => {
+export const sendSqsMessage = async (
+  message: string,
+  attributes?: Record<string, MessageAttributeValue>,
+) => {
   const command = new SendMessageCommand({
     QueueUrl: SQS_QUEUE_URL,
     DelaySeconds: 0,
-    MessageAttributes: {
-      Title: {
-        DataType: "String",
-        StringValue: "The Whistler",
-      },
-      Author: {
-        DataType: "String",
-        StringValue: "John Grisham",
-      },
-      WeeksOn: {
-        DataType: "Number",
-        StringValue: "6",
-      },
-    },
+    MessageAttributes: attributes,
     MessageBody: message,
   });
 

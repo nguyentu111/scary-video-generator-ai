@@ -35,15 +35,26 @@ export async function Header() {
 
           <div className="flex items-center gap-2">
             {user && (
-              <Button
-                variant={"link"}
-                asChild
-                className="flex items-center justify-center gap-2"
-              >
-                <Link href={"/tao-video"}>
-                  <LayoutDashboard className="h-4 w-4" /> Tạo video
-                </Link>
-              </Button>
+              <>
+                <Button
+                  variant={"link"}
+                  asChild
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Link href={"/tao-video"}>
+                    <LayoutDashboard className="h-4 w-4" /> Tạo video
+                  </Link>
+                </Button>
+                <Button
+                  variant={"link"}
+                  asChild
+                  className="flex items-center justify-center gap-2"
+                >
+                  <Link href={"/video-cua-toi"}>
+                    <LayoutDashboard className="h-4 w-4" /> Video của tôi
+                  </Link>
+                </Button>
+              </>
             )}
           </div>
         </div>

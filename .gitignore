@@ -46,3 +46,4 @@ yarn-error.log*
 .idea
 
 todo.txt
+.env.local

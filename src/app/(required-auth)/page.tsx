@@ -1,6 +1,6 @@
 import { FlickerText } from "@/components/shared/flicker-text";
 import { Button } from "@/components/ui/button";
-import { amatic } from "@/lib/fonts";
+import { amatic } from "@/styles/fonts";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
