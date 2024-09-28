@@ -2,14 +2,11 @@ import { ReactNode } from "react";
 import { ThemeProvider } from "./theme-provider";
 import { ModalProvider } from "./modal-provider";
 import { TRPCReactProvider } from "@/trpc/react";
-import { env } from "@/env";
 import { ConvexClientProvider } from "./convex-client-provider";
-import { AuthProvider } from "./auth-provider";
-import { auth } from "@/lib/auth";
+import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 export async function Providers({ children }: { children: ReactNode }) {
-  const { user, session } = await auth();
   return (
-    <AuthProvider user={user} session={session}>
+    <ConvexAuthNextjsServerProvider>
       <TRPCReactProvider>
         <ConvexClientProvider>
           <ModalProvider>
@@ -24,6 +21,6 @@ export async function Providers({ children }: { children: ReactNode }) {
           </ModalProvider>
         </ConvexClientProvider>
       </TRPCReactProvider>
-    </AuthProvider>
+    </ConvexAuthNextjsServerProvider>
   );
 }

@@ -7,6 +7,16 @@ await import("./src/env.js");
 /** @type {import("next").NextConfig} */
 const config = {
   experimental: {},
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "canny-hippopotamus-570.convex.site",
+        port: "",
+        pathname: "/**",
+      },
+    ],
+  },
 };
 
 export default config;

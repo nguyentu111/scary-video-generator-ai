@@ -2,13 +2,11 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button"; // Import Shadcn UI components
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,18 +14,21 @@ import {
 } from "@/components/ui/form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useAssertAuth, useAuth } from "@/components/providers/auth-provider";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AuthLoader } from "@/components/shared/auth-loader";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   name: z.string().min(1),
-  story: z.string().min(200, "Câu chuyện ít nhất 200 kí tự"),
+  story: z.string().min(1, "Câu chuyện ít nhất 200 kí tự"),
 });
 
 const page = () => {
-  const { user } = useAssertAuth();
+  const user = useQuery(api.users.viewer);
+  const router = useRouter();
   console.log({ user });
   const mutate = useMutation(api.stories.createStory);
   const form = useForm({
@@ -35,12 +36,12 @@ const page = () => {
   });
   const onSubmit = async (data: z.infer<typeof schema>) => {
     console.log(data);
-    const id = await mutate({ ...data, userId: user!.id });
-    toast(id);
+    const id = await mutate({ ...data, userId: user!._id });
+    router.push("/cau-chuyen/" + id);
   };
 
   return (
-    <div>
+    <AuthLoader authLoading={<UnauthenticatedSkeleton />}>
       <Form {...form}>
         {/** @ts-ignore */}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -65,6 +66,7 @@ const page = () => {
                 <FormLabel>Câu chuyện</FormLabel>
                 <FormControl>
                   <Textarea
+                    className="min-h-[400px]"
                     {...field}
                     placeholder="Nhập câu chuyện kinh dị của bạn"
                   ></Textarea>
@@ -77,8 +79,16 @@ const page = () => {
           <Button type="submit">Submit</Button>
         </form>
       </Form>
-    </div>
+    </AuthLoader>
   );
 };
 
 export default page;
+function UnauthenticatedSkeleton() {
+  return (
+    <div className="">
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="mt-8 h-[400px] w-full" />
+    </div>
+  );
+}
