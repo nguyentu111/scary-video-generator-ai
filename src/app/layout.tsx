@@ -50,9 +50,9 @@ export default async function RootLayout({
           <NextTopLoader />
           <div className="flex h-screen w-screen flex-col overflow-hidden">
             <Header />
-            <main className="container mx-auto h-full w-full flex-1 py-4">
-              {children}
-            </main>
+            <div className="h-full w-full flex-1 overflow-auto py-4">
+              <main className="container h-full">{children}</main>
+            </div>
           </div>
         </Providers>
         <Toaster />
