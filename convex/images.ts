@@ -1,18 +1,8 @@
+import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { httpAction } from "./_generated/server";
+import { action, httpAction, internalAction } from "./_generated/server";
 
-export const getImage = httpAction(async (ctx, request) => {
-  const { searchParams } = new URL(request.url);
-  const storageId = searchParams.get("storageId")! as Id<"_storage">;
-  const blob = await ctx.storage.get(storageId);
-  if (blob === null) {
-    return new Response("Image not found", {
-      status: 404,
-    });
-  }
-  return new Response(blob);
-});
 export const sendImagePost = httpAction(async (ctx, request) => {
   // Step 1: Store the file
   const blob = await request.blob();
@@ -55,23 +45,72 @@ export const sendImageOptions = httpAction(async (ctx, request) => {
 });
 
 export const updateStorageIdToSegment = httpAction(async (ctx, request) => {
-  await ctx.runMutation(internal.logs.create, {
-    message: "updating storage id",
-    function: "updateStorageIdToSegment",
-  });
-  const data = (await request.json()) as {
-    segmentId: string;
-    storageId: string;
-  };
-  await ctx.runMutation(api.segments.editImageId, {
-    id: data.segmentId as Id<"segments">,
-    imageId: data.storageId as Id<"_storage">,
-  });
-  return new Response(null, {
-    status: 200,
-    headers: new Headers({
-      "Access-Control-Allow-Origin": "*",
-      Vary: "origin",
-    }),
-  });
+  try {
+    const data = (await request.json()) as {
+      segmentId: string;
+      imageUrl: string;
+    };
+    await ctx.runMutation(internal.logs.create, {
+      message: "updating image url: " + data.segmentId,
+      function: "updateStorageIdToSegment",
+    });
+    await ctx.runMutation(api.segments.editImageId, {
+      id: data.segmentId as Id<"segments">,
+      imageUrl: data.imageUrl,
+      status: "success",
+    });
+    return new Response(null, {
+      status: 200,
+      headers: new Headers({
+        "Access-Control-Allow-Origin": "*",
+        Vary: "origin",
+      }),
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      await ctx.runMutation(internal.logs.create, {
+        message: error.message,
+        function: "images.updateStorageIdToSegment.error",
+      });
+      return new Response(error.message, {
+        status: 500,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": "*",
+          Vary: "origin",
+        }),
+      });
+    } else {
+      await ctx.runMutation(internal.logs.create, {
+        message: "Unkown error occur :<<",
+        function: "images.updateStorageIdToSegment.error",
+      });
+      return new Response("Unkown error occur :<<", {
+        status: 500,
+        headers: new Headers({
+          "Access-Control-Allow-Origin": "*",
+          Vary: "origin",
+        }),
+      });
+    }
+  }
+});
+export const regenerateImage = action({
+  args: { segmentId: v.id("segments"), prompt: v.string() },
+  handler: async (ctx, args) => {
+    await ctx.runMutation(api.segments.editImageId, {
+      id: args.segmentId,
+      imageUrl: undefined,
+      status: "creating",
+    });
+    await ctx.runAction(internal.sqs.sendSqsMessageGenerateImage, {
+      message: args.prompt,
+      attributes: {
+        segmentId: {
+          DataType: "String",
+          StringValue: args.segmentId.toString(),
+        },
+      },
+    });
+    return "ok";
+  },
 });

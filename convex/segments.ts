@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const get = query({
   args: {},
@@ -8,29 +7,55 @@ export const get = query({
     return await ctx.db.query("segments").collect();
   },
 });
+export const getOne = query({
+  args: { id: v.id("segments") },
+  handler: async (ctx, { id }) => {
+    return await ctx.db.get(id);
+  },
+});
 export const edit = mutation({
   args: {
     id: v.id("segments"),
     imagePromt: v.optional(v.string()),
     text: v.optional(v.string()),
-    imageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
       text: args.text,
       imagePromt: args.imagePromt,
-      imageId: args.imageId,
+      imageUrl: args.imageUrl,
     });
   },
 });
 export const editImageId = mutation({
   args: {
     id: v.id("segments"),
-    imageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal("success"),
+      v.literal("error"),
+      v.literal("none"),
+      v.literal("creating"),
+    ),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
-      imageId: args.imageId,
+      imageUrl: args.imageUrl,
+      imageStatus: args.status,
+    });
+  },
+});
+export const editVoiceUrlAndDuration = internalMutation({
+  args: {
+    id: v.id("segments"),
+    voiceDuration: v.number(),
+    voiceUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      voiceDuration: args.voiceDuration,
+      voiceUrl: args.voiceUrl,
     });
   },
 });
@@ -39,10 +64,11 @@ export const getByStoryId = query({
   handler: async (ctx, args) => {
     // const user = await getAuthUserId(ctx);
     // if (!user) throw new Error("Unauthenticated");
-    return await ctx.db
+    const records = await ctx.db
       .query("segments")
       .filter((q) => q.eq(q.field("storyId"), args.storyId))
       .collect();
+    return records.sort((a, b) => a.order - b.order);
   },
 });
 export const saveSegments = internalMutation({
@@ -52,11 +78,13 @@ export const saveSegments = internalMutation({
   },
   handler: async (ctx, args) => {
     await Promise.all(
-      args.segments.map((s) =>
+      args.segments.map((s, i) =>
         ctx.db.insert("segments", {
           imagePromt: s.image,
           text: s.segment,
           storyId: args.storyId,
+          order: i + 1,
+          imageStatus: "creating",
         }),
       ),
     );

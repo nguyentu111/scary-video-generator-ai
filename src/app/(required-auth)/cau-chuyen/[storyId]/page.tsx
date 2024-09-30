@@ -1,6 +1,5 @@
 "use client";
 import { useModal } from "@/components/providers/modal-provider";
-import { ConvexImage } from "@/components/shared/convex-image";
 import CustomModal from "@/components/shared/custom-modal";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,16 +10,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
-import { useMutation, useQuery } from "convex/react";
-import { EllipsisVertical, ImageIcon, PenIcon, TrashIcon } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { useAction, useMutation, useQuery } from "convex/react";
+import {
+  DownloadIcon,
+  EllipsisVertical,
+  ImageIcon,
+  Loader,
+  LoaderIcon,
+  TrashIcon,
+} from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/convex/_generated/api";
 import { Id } from "~/convex/_generated/dataModel";
@@ -30,8 +38,9 @@ export default function Page({
   params: { storyId: Id<"stories"> };
 }) {
   const segments = useQuery(api.segments.getByStoryId, { storyId });
+  const story = useQuery(api.stories.get, { id: storyId });
   return (
-    <div className="h-full">
+    <div className="h-full py-12">
       {segments?.length === 0 && (
         <div className="flex h-full items-center justify-center">
           <div className={cn(amatic.className, "text-[40px] font-bold")}>
@@ -39,11 +48,17 @@ export default function Page({
           </div>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-8 py-12">
-        {segments?.map((s, i) => (
-          <SegmentItem segment={s} index={i} key={s._id} />
-        ))}
-      </div>
+      {segments?.length && segments.length > 0 && (
+        <>
+          <h1 className="w-full text-center text-[40px]">{story?.name}</h1>
+          <div className="grid grid-cols-2 gap-8 py-12">
+            {segments?.map((s, i) => (
+              <SegmentItem segment={s} index={i} key={s._id} />
+            ))}
+            <CreateVideoButton storyId={storyId} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -55,10 +70,11 @@ function SegmentItem({
   segment: {
     _id: Id<"segments">;
     _creationTime: number;
-    imageId?: Id<"_storage"> | undefined;
+    imageUrl?: string;
     storyId: Id<"stories">;
     text: string;
     imagePromt: string;
+    imageStatus: string;
   };
   index: number;
 }) {
@@ -70,9 +86,19 @@ function SegmentItem({
       text: ref.current?.textContent ?? "",
       id: segment._id,
       imagePromt: segment.imagePromt,
-      imageId: segment.imageId,
+      imageUrl: segment.imageUrl,
     });
   }, 1000);
+  const handleDownload = (imageUrl: string, fileName: string) => {
+    const link = document.createElement("a");
+    link.target = "blank";
+    link.href = imageUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div key={segment._id} className="rounded-xl border border-purple-500">
       <div className="flex justify-between border-b border-purple-500 px-4 py-2">
@@ -86,15 +112,25 @@ function SegmentItem({
             align="end"
           >
             <div className="">
-              <div className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm hover:bg-black">
-                <PenIcon className="h-4 w-4" />
-                Sửa nội dung
-              </div>
+              {segment.imageUrl && (
+                <div
+                  onClick={() =>
+                    handleDownload(segment.imageUrl!, `doan_${index + 1}.png}`)
+                  }
+                  className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm hover:bg-black"
+                >
+                  <DownloadIcon className="h-4 w-4" />
+                  Tải ảnh
+                </div>
+              )}
               <div
                 onClick={() =>
                   setOpen(
                     <CustomModal title="Sửa ảnh" subheading="">
-                      <ImagePromtChangeForm prompt={segment.imagePromt} />
+                      <ImagePromtChangeForm
+                        prompt={segment.imagePromt}
+                        segmentId={segment._id}
+                      />
                     </CustomModal>,
                   )
                 }
@@ -112,16 +148,23 @@ function SegmentItem({
         </Popover>
       </div>
       <div className="aspect-video">
-        {segment.imageId ? (
-          <ConvexImage
+        {segment.imageStatus === "success" ? (
+          <Image
+            src={segment.imageUrl!}
             height={300}
             width={533}
             className="h-full w-full"
-            storageId={segment.imageId}
             alt={segment.imagePromt}
           />
+        ) : segment.imageStatus === "creating" ? (
+          <div className="flex h-full w-full items-center justify-center gap-2">
+            <span>Ảnh đang tạo </span>
+            <LoaderIcon className="h-5 w-5 animate-spin" />
+          </div>
         ) : (
-          <div>Ảnh đang tạo</div>
+          <div className="flex h-full w-full items-center justify-center">
+            <span>Ảnh lỗi </span>
+          </div>
         )}
       </div>
       <div
@@ -136,11 +179,38 @@ function SegmentItem({
   );
 }
 
-export const ImagePromtChangeForm = ({ prompt }: { prompt: string }) => {
+const ImagePromtChangeForm = ({
+  prompt,
+  segmentId,
+}: {
+  prompt: string;
+  segmentId: Id<"segments">;
+}) => {
+  const { setClose } = useModal();
+  const action = useAction(api.images.regenerateImage);
   const form = useForm({
     defaultValues: { prompt },
   });
-  const onSubmit = () => {};
+  const onSubmit = async (data: { prompt: string }) => {
+    try {
+      await action({
+        segmentId,
+        prompt: data.prompt,
+      });
+      toast.success("Đang tạo lại ảnh...");
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error);
+        if (
+          !error.message.includes(
+            "Uncaught Error: Field name $metadata starts with a '$', which is reserved.",
+          )
+        )
+          toast.error(error.message);
+      }
+    }
+    setClose();
+  };
   return (
     <Form {...form}>
       {/** @ts-ignore */}
@@ -159,8 +229,30 @@ export const ImagePromtChangeForm = ({ prompt }: { prompt: string }) => {
           )}
         />
 
-        <Button type="submit">Tạo lại ảnh</Button>
+        <Button
+          type="submit"
+          disabled={form.formState.isLoading || form.formState.isSubmitting}
+        >
+          {form.formState.isLoading || form.formState.isSubmitting ? (
+            <Loader className="h-4 w-4 animate-spin" />
+          ) : (
+            "Tạo lại ảnh"
+          )}
+        </Button>
       </form>
     </Form>
   );
 };
+function CreateVideoButton({ storyId }: { storyId: Id<"stories"> }) {
+  const mutate = useMutation(api.videos.create);
+  const router = useRouter();
+  const handleCreate = async () => {
+    const videoId = await mutate({ storyId });
+    router.push("/video-cua-toi");
+  };
+  return (
+    <Button className="col-span-2 w-full bg-purple-500" onClick={handleCreate}>
+      Tạo video
+    </Button>
+  );
+}

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthLoader } from "@/components/shared/auth-loader";
 import { useRouter } from "next/navigation";
+import { Loader2Icon } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(1),
@@ -76,7 +77,16 @@ const page = () => {
             )}
           />
 
-          <Button type="submit">Submit</Button>
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting || form.formState.isLoading}
+          >
+            {form.formState.isSubmitting || form.formState.isLoading ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <span>Submit</span>
+            )}
+          </Button>
         </form>
       </Form>
     </AuthLoader>

@@ -3,16 +3,11 @@ import {
   sendImageOptions,
   sendImagePost,
   updateStorageIdToSegment,
-  getImage,
 } from "./images";
 import { auth } from "./auth";
+import { voiceGeneratedCallback } from "./voices";
 const http = httpRouter();
 
-http.route({
-  path: "/getImage",
-  method: "GET",
-  handler: getImage,
-});
 http.route({
   path: "/sendImage",
   method: "POST",
@@ -28,6 +23,10 @@ http.route({
   method: "POST",
   handler: updateStorageIdToSegment,
 });
-
+http.route({
+  path: "/voiceGeneratedCallback",
+  method: "POST",
+  handler: voiceGeneratedCallback,
+});
 auth.addHttpRoutes(http);
 export default http;

@@ -12,13 +12,31 @@ const schema = defineSchema({
   segments: defineTable({
     text: v.string(),
     imagePromt: v.string(),
-    imageId: v.optional(v.id("_storage")),
+    imageUrl: v.optional(v.string()),
+    imageStatus: v.union(
+      v.literal("none"),
+      v.literal("creating"),
+      v.literal("error"),
+      v.literal("success"),
+    ),
     storyId: v.id("stories"),
+    order: v.number(),
+    voiceUrl: v.optional(v.string()),
+    voiceDuration: v.optional(v.number()),
   }),
   logs: defineTable({
     messsage: v.string(),
     function: v.string(),
     additionals: v.optional(v.any()),
+  }),
+  videos: defineTable({
+    storyId: v.id("stories"),
+    videoUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal("creating"),
+      v.literal("success"),
+      v.literal("error"),
+    ),
   }),
 });
 

@@ -1,9 +1,20 @@
 "use node";
-import axios from "axios";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { internalAction } from "./_generated/server";
-const API_URL = "https://api.openai.com/v1/chat/completions";
+import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
+import { z } from "zod";
+import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const chatGptResSchema = z.object({
+  segments: z.array(
+    z.object({
+      segment: z.string(),
+      image: z.string(),
+    }),
+  ),
+});
 export const splitToSegment = internalAction({
   args: { story: v.string(), storyId: v.id("stories") },
   handler: async (ctx, args) => {
@@ -12,79 +23,64 @@ export const splitToSegment = internalAction({
       function: "splitToSegment",
     });
 
-    const systemPromt = {
+    const systemPromt: ChatCompletionMessageParam = {
       role: "system",
-      content: `You are an story teller ai assisant. Split the story user give you into small segmnents,
-             each segment will fit with an image that descibe the context of that segment .Return 
-            the answer as a JSON array contain objects of segment and image, image value is a prompt describe the context of that segment 
-            , example response: 
-            [{
-              segment : 'I was 8 years old when I last saw my mother. 
-                We lived in a somewhat big house out in the countryside. A decent drive from the nearest towns and cities.',
-              image : 'A countryside house standing isolated, surrounded by dark, overgrown fields under a twilight sky. The air feels heavy with mystery, the house appears large yet eerily quiet.'
-          },...].Each images wont have the context of previous segments and images, so made it easy to understand like a completely separate prompt.
-             Please return full story segments, don't lose anything.`,
+      content: `You are an AI that creates horror videos based on the story provided by the user. Your task is to analyze the story, divide it into smaller segments, and create image prompts for each segment to assist an API in generating realistic images.
+        Requirements:
+        Analyze the story: Read the story input by the user and split it into smaller segments, each with a length of 2 to 4 sentences.
+        Create image prompts: Based on the content of each segment, generate a detailed image description (image prompt). This description should reflect the context, emotions, and atmosphere of that segment while being aligned with the horror theme.
+        Format: For each segment, use the following format:
+        Segment: [Content of the segment]
+        Image prompt: [Detailed description for the image, including elements such as color, lighting, setting, emotions, and key objects in the scene.]
+        Return the response as a Json array.
+        Note: Ensure that the image prompts can be easily translated into real images, focusing on creating the creepy and tense atmosphere of the story.
+        
+        `,
     };
     try {
-      const response = await axios.post(
-        API_URL,
-        {
-          model: "gpt-3.5-turbo",
-          messages: [systemPromt, { role: "user", content: args.story }],
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      const completion = await openai.beta.chat.completions.parse({
+        model: "gpt-4o-2024-08-06",
+        messages: [
+          systemPromt,
+          {
+            role: "user",
+            content: args.story,
           },
-        },
-      );
-
-      const reply = response.data.choices[0].message.content as string;
-      const regex = /(\[.*\])/s; // Matches the JSON array
-      const match = reply.match(regex);
-      let jsonArray: string = "";
-      if (match) {
-        jsonArray = match[1] as string; // The first captured group contains the array
-        await ctx.runMutation(internal.logs.create, {
-          message: JSON.stringify(jsonArray),
-          function: "splitToSegment",
-        });
-      } else {
-        await ctx.runMutation(internal.logs.create, {
-          message: "not has array in response " + JSON.stringify(jsonArray),
-          function: "splitToSegment",
-          additionals: "storyId:" + args.storyId,
-        });
-      }
-      const segmentsArray = JSON.parse(jsonArray) as Array<{
-        segment: string;
-        image: string;
-      }>;
-      await ctx.runMutation(internal.segments.saveSegments, {
-        segments: segmentsArray,
-        storyId: args.storyId,
+        ],
+        response_format: zodResponseFormat(chatGptResSchema, "segments"),
       });
-      const segments = await ctx.runQuery(api.segments.getByStoryId, {
-        storyId: args.storyId,
-      });
+      const segmentArray = completion.choices[0]?.message.parsed?.segments;
       await ctx.runMutation(internal.logs.create, {
-        message: "calling sendSqsMessage..",
+        message: JSON.stringify(segmentArray),
         function: "splitToSegment",
       });
-      await Promise.all(
-        segments.map((s) =>
-          ctx.runAction(internal.sqs.sendSqsMessage, {
-            message: s.imagePromt ?? "",
-            attributes: {
-              segmentId: {
-                DataType: "String",
-                StringValue: s._id.toString(),
+      if (segmentArray) {
+        await ctx.runMutation(internal.segments.saveSegments, {
+          segments: segmentArray,
+          storyId: args.storyId,
+        });
+        const segments = await ctx.runQuery(api.segments.getByStoryId, {
+          storyId: args.storyId,
+        });
+        await Promise.all(
+          segments.map((s) =>
+            ctx.runAction(internal.sqs.sendSqsMessageGenerateImage, {
+              message: s.imagePromt ?? "",
+              attributes: {
+                segmentId: {
+                  DataType: "String",
+                  StringValue: s._id.toString(),
+                },
               },
-            },
-          }),
-        ),
-      );
+            }),
+          ),
+        );
+      } else {
+        await ctx.runMutation(internal.logs.create, {
+          message: "Fail to get segments array from chatgpt",
+          function: "splitToSegment.error",
+        });
+      }
     } catch (error) {
       if (error instanceof Error) {
         await ctx.runMutation(internal.logs.create, {
