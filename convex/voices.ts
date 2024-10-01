@@ -9,38 +9,36 @@ export const voiceGeneratedCallback = httpAction(async (ctx, request) => {
       voiceUrl: string;
       voiceDuration: number;
       segmentId: string;
+      videoId: string;
+      srt: string;
     };
-    await ctx.runMutation(internal.segments.editVoiceUrlAndDuration, {
+    await ctx.runMutation(internal.segments.editVoice, {
       id: data.segmentId as Id<"segments">,
       voiceDuration: data.voiceDuration,
       voiceUrl: data.voiceUrl,
+      voiceSrt: data.srt,
     });
     const segment = await ctx.runQuery(api.segments.getOne, {
       id: data.segmentId as Id<"segments">,
     });
     if (!segment) {
-      await ctx.runMutation(internal.logs.create, {
-        message: "segment not found!",
-        function: "voices.voiceGeneratedCallback.error",
-      });
       throw new ConvexError(
         "voices.voiceGeneratedCallback.error: segment not found!",
       );
     }
-    ctx.scheduler.runAfter(0, internal.sqs.sendSqsMessageGenerateFrames, {
-      message: segment.text,
-      attributes: {
-        segmentId: { DataType: "String", StringValue: data.segmentId },
-        folderName: {
-          DataType: "String",
-          StringValue: `frames/segment_${data.segmentId}`,
-        },
-        numberOfFrames: {
-          DataType: "Number",
-          StringValue: (segment.voiceDuration! * 25 + 10).toString(),
+    await ctx.scheduler.runAfter(
+      0,
+      internal.sqs.sendSqsMessageGenerateSegmentVideo,
+      {
+        message: {
+          imageUrl: segment.imageUrl!,
+          segmentId: data.segmentId,
+          voiceUrl: data.voiceUrl,
+          voiceDuration: data.voiceDuration,
+          voiceSrt: data.srt,
         },
       },
-    });
+    );
     return new Response(null, {
       status: 200,
     });

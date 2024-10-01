@@ -1,5 +1,12 @@
-import { v } from "convex/values";
-import { internalMutation, mutation, query } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import {
+  httpAction,
+  internalMutation,
+  mutation,
+  query,
+} from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 export const get = query({
   args: {},
@@ -28,6 +35,17 @@ export const edit = mutation({
     });
   },
 });
+export const editFramesStatus = mutation({
+  args: {
+    id: v.id("segments"),
+    isFramesGenerated: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      isFramesGenerated: args.isFramesGenerated,
+    });
+  },
+});
 export const editImageId = mutation({
   args: {
     id: v.id("segments"),
@@ -46,16 +64,33 @@ export const editImageId = mutation({
     });
   },
 });
-export const editVoiceUrlAndDuration = internalMutation({
+export const editVoice = internalMutation({
   args: {
     id: v.id("segments"),
     voiceDuration: v.number(),
     voiceUrl: v.string(),
+    voiceSrt: v.string(),
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.id, {
       voiceDuration: args.voiceDuration,
       voiceUrl: args.voiceUrl,
+      voiceSrt: args.voiceSrt,
+    });
+  },
+});
+export const editVideoUrlAndStatus = internalMutation({
+  args: {
+    id: v.id("segments"),
+    videoStatus: v.optional(
+      v.union(v.literal("success"), v.literal("error"), v.literal("creating")),
+    ),
+    videoUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      videoStatus: args.videoStatus,
+      videoUrl: args.videoUrl,
     });
   },
 });
@@ -90,3 +125,27 @@ export const saveSegments = internalMutation({
     );
   },
 });
+export const deleteSegment = internalMutation({
+  args: { id: v.id("segments") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
+});
+export const segmentVideoGeneratedCallback = httpAction(
+  async (ctx, request) => {
+    const { segmentId, videoUrl } = (await request.json()) as {
+      segmentId: Id<"segments">;
+      videoUrl: string;
+    };
+    const segment = await ctx.runQuery(api.segments.getOne, {
+      id: segmentId,
+    });
+    if (!segment) throw new ConvexError("Segment not found");
+    await ctx.runMutation(internal.segments.editVideoUrlAndStatus, {
+      id: segmentId,
+      videoUrl: videoUrl,
+      videoStatus: "success",
+    });
+    return new Response(null, { status: 200 });
+  },
+);

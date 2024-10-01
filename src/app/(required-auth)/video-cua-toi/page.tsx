@@ -7,20 +7,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 
 export default function Home() {
-  const stories = useQuery(api.stories.getStories);
+  const videos = useQuery(api.videos.get);
   return (
     <AuthLoader authLoading={<AuthLoadingSkeleton />}>
       <div>
         <h1>Video của tôi</h1>
         <div className="grid grid-cols-4 gap-2 py-12">
-          {stories?.map(({ _id, name }) => (
-            <Link
-              href={`/video-cua-toi/${_id}`}
-              className="cursor-pointer rounded-lg border-2 p-4"
-              key={_id}
-            >
+          {videos?.map(({ _id, name }) => (
+            <div className="cursor-pointer rounded-lg border-2 p-4" key={_id}>
               {name}
-            </Link>
+            </div>
           ))}
         </div>
       </div>

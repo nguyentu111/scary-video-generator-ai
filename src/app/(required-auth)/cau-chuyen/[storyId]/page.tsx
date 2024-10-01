@@ -55,7 +55,7 @@ export default function Page({
             {segments?.map((s, i) => (
               <SegmentItem segment={s} index={i} key={s._id} />
             ))}
-            <CreateVideoButton storyId={storyId} />
+            <CreateVideoButton storyId={storyId} name={story?.name!} />
           </div>
         </>
       )}
@@ -243,11 +243,17 @@ const ImagePromtChangeForm = ({
     </Form>
   );
 };
-function CreateVideoButton({ storyId }: { storyId: Id<"stories"> }) {
+function CreateVideoButton({
+  storyId,
+  name,
+}: {
+  storyId: Id<"stories">;
+  name: string;
+}) {
   const mutate = useMutation(api.videos.create);
   const router = useRouter();
   const handleCreate = async () => {
-    const videoId = await mutate({ storyId });
+    const videoId = await mutate({ storyId, name });
     router.push("/video-cua-toi");
   };
   return (

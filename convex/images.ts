@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { action, httpAction, internalAction } from "./_generated/server";
@@ -97,6 +97,10 @@ export const updateStorageIdToSegment = httpAction(async (ctx, request) => {
 export const regenerateImage = action({
   args: { segmentId: v.id("segments"), prompt: v.string() },
   handler: async (ctx, args) => {
+    const segment = await ctx.runQuery(api.segments.getOne, {
+      id: args.segmentId,
+    });
+    if (!segment) throw new ConvexError("Segment not found");
     await ctx.runMutation(api.segments.editImageId, {
       id: args.segmentId,
       imageUrl: undefined,
@@ -108,6 +112,10 @@ export const regenerateImage = action({
         segmentId: {
           DataType: "String",
           StringValue: args.segmentId.toString(),
+        },
+        folder: {
+          DataType: "String",
+          StringValue: "images/story_" + segment.storyId,
         },
       },
     });

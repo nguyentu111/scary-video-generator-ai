@@ -23,6 +23,12 @@ const schema = defineSchema({
     order: v.number(),
     voiceUrl: v.optional(v.string()),
     voiceDuration: v.optional(v.number()),
+    isFramesGenerated: v.optional(v.boolean()),
+    videoUrl: v.optional(v.string()),
+    videoStatus: v.optional(
+      v.union(v.literal("creating"), v.literal("error"), v.literal("success")),
+    ),
+    voiceSrt: v.optional(v.string()),
   }),
   logs: defineTable({
     messsage: v.string(),
@@ -31,6 +37,7 @@ const schema = defineSchema({
   }),
   videos: defineTable({
     storyId: v.id("stories"),
+    name: v.string(),
     videoUrl: v.optional(v.string()),
     status: v.union(
       v.literal("creating"),

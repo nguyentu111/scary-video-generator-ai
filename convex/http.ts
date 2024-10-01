@@ -6,6 +6,8 @@ import {
 } from "./images";
 import { auth } from "./auth";
 import { voiceGeneratedCallback } from "./voices";
+import { framesGeneratedCallback } from "./frames";
+import { segmentVideoGeneratedCallback } from "./segments";
 const http = httpRouter();
 
 http.route({
@@ -27,6 +29,16 @@ http.route({
   path: "/voiceGeneratedCallback",
   method: "POST",
   handler: voiceGeneratedCallback,
+});
+http.route({
+  path: "/framesGeneratedCallback",
+  method: "POST",
+  handler: framesGeneratedCallback,
+});
+http.route({
+  path: "/segmentVideoGeneratedCallback",
+  method: "POST",
+  handler: segmentVideoGeneratedCallback,
 });
 auth.addHttpRoutes(http);
 export default http;
