@@ -17,15 +17,17 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as chatgpt from "../chatgpt.js";
-import type * as frames from "../frames.js";
+import type * as cloudinary from "../cloudinary.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as logs from "../logs.js";
-import type * as segments from "../segments.js";
+import type * as replicate from "../replicate.js";
 import type * as sqs from "../sqs.js";
 import type * as stories from "../stories.js";
+import type * as storySegments from "../storySegments.js";
 import type * as users from "../users.js";
 import type * as videos from "../videos.js";
+import type * as videoSegments from "../videoSegments.js";
 import type * as voices from "../voices.js";
 
 /**
@@ -39,15 +41,17 @@ import type * as voices from "../voices.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   chatgpt: typeof chatgpt;
-  frames: typeof frames;
+  cloudinary: typeof cloudinary;
   http: typeof http;
   images: typeof images;
   logs: typeof logs;
-  segments: typeof segments;
+  replicate: typeof replicate;
   sqs: typeof sqs;
   stories: typeof stories;
+  storySegments: typeof storySegments;
   users: typeof users;
   videos: typeof videos;
+  videoSegments: typeof videoSegments;
   voices: typeof voices;
 }>;
 export declare const api: FilterApi<

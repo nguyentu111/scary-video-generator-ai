@@ -1,12 +1,14 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { api, internal } from "./_generated/api";
-import { query } from "./_generated/server";
+import { action, internalAction, query } from "./_generated/server";
 import { mutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 
 export const get = query({
   args: { id: v.id("stories") },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Unauthenticated");
     return await ctx.db.get(args.id);
   },
 });
@@ -30,7 +32,7 @@ export const createStory = mutation({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) {
-      throw new Error("Unauthenticated");
+      throw new ConvexError("Unauthenticated");
     }
     const storyId = await ctx.db.insert("stories", {
       userId: args.userId,
@@ -55,12 +57,14 @@ export const deleteStory = mutation({
     if (story?.userId !== userId)
       throw new ConvexError("You do not have permission on this story");
     const segments = await ctx.db
-      .query("segments")
+      .query("storySegments")
       .filter((q) => q.eq(q.field("storyId"), story._id))
       .collect();
     await Promise.all(
       segments.map((segment) =>
-        ctx.runMutation(internal.segments.deleteSegment, { id: segment._id }),
+        ctx.runMutation(internal.storySegments.deleteStorySegment, {
+          id: segment._id,
+        }),
       ),
     );
     await ctx.db.delete(args.id);

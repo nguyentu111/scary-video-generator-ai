@@ -8,18 +8,22 @@ export const voiceGeneratedCallback = httpAction(async (ctx, request) => {
     const data = (await request.json()) as {
       voiceUrl: string;
       voiceDuration: number;
-      segmentId: string;
+      segmentId: Id<"videoSegments">;
       videoId: string;
       srt: string;
     };
-    await ctx.runMutation(internal.segments.editVoice, {
-      id: data.segmentId as Id<"segments">,
-      voiceDuration: data.voiceDuration,
-      voiceUrl: data.voiceUrl,
-      voiceSrt: data.srt,
+    await ctx.runMutation(internal.videoSegments.editVoiceStatus, {
+      id: data.segmentId,
+      voiceStatus: {
+        status: "saved",
+        elapsedMs: 999,
+        voiceDuration: data.voiceDuration,
+        voiceSrt: data.srt,
+        voiceUrl: data.voiceUrl,
+      },
     });
-    const segment = await ctx.runQuery(api.segments.getOne, {
-      id: data.segmentId as Id<"segments">,
+    const segment = await ctx.runQuery(api.videoSegments.get, {
+      id: data.segmentId,
     });
     if (!segment) {
       throw new ConvexError(
@@ -31,7 +35,7 @@ export const voiceGeneratedCallback = httpAction(async (ctx, request) => {
       internal.sqs.sendSqsMessageGenerateSegmentVideo,
       {
         message: {
-          imageUrl: segment.imageUrl!,
+          imageUrl: segment.imageUrl,
           segmentId: data.segmentId,
           voiceUrl: data.voiceUrl,
           voiceDuration: data.voiceDuration,

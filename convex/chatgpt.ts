@@ -56,34 +56,45 @@ export const splitToSegment = internalAction({
         function: "splitToSegment",
       });
       if (segmentArray) {
-        await ctx.runMutation(internal.segments.saveSegments, {
-          segments: segmentArray,
-          storyId: args.storyId,
-        });
-        const segments = await ctx.runQuery(api.segments.getByStoryId, {
-          storyId: args.storyId,
-        });
+        const segmentIds = await ctx.runMutation(
+          internal.storySegments.saveSegments,
+          {
+            segments: segmentArray,
+            storyId: args.storyId,
+          },
+        );
+        //TODO :generate image for each segment prompt
         await Promise.all(
-          segments.map((s) =>
-            ctx.scheduler.runAfter(
-              0,
-              internal.sqs.sendSqsMessageGenerateImage,
-              {
-                message: s.imagePromt ?? "",
-                attributes: {
-                  segmentId: {
-                    DataType: "String",
-                    StringValue: s._id.toString(),
-                  },
-                  folder: {
-                    DataType: "String",
-                    StringValue: `images/story_` + s.storyId,
-                  },
-                },
-              },
-            ),
+          segmentArray.map((s, i) =>
+            ctx.scheduler.runAfter(0, internal.replicate.generateImage, {
+              prompt: s.image,
+              segmentId: segmentIds[i]!,
+              storyId: args.storyId,
+            }),
           ),
         );
+        // await ctx.scheduler.runAfter(30, internal.storySegments.timeout, { submissionId });
+        // await Promise.all(
+        //   segmentArray.map((segment, i) =>
+        //     ctx.scheduler.runAfter(
+        //       0,
+        //       internal.sqs.sendSqsMessageGenerateImage,
+        //       {
+        //         message: segment.image ?? "",
+        //         attributes: {
+        //           segmentId: {
+        //             DataType: "String",
+        //             StringValue: segmentIds[i]!,
+        //           },
+        //           folder: {
+        //             DataType: "String",
+        //             StringValue: `images/story_` + s.storyId,
+        //           },
+        //         },
+        //       },
+        //     ),
+        //   ),
+        // );
       } else {
         await ctx.runMutation(internal.logs.create, {
           message: "Fail to get segments array from chatgpt",

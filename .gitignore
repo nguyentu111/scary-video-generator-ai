@@ -49,3 +49,4 @@ todo.txt
 .env.local
 
 /convex/_generated
+convex/_generated/api.d.ts

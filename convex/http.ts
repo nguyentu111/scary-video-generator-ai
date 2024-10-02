@@ -1,13 +1,8 @@
 import { httpRouter } from "convex/server";
-import {
-  sendImageOptions,
-  sendImagePost,
-  updateStorageIdToSegment,
-} from "./images";
+import { sendImageOptions, sendImagePost } from "./images";
 import { auth } from "./auth";
 import { voiceGeneratedCallback } from "./voices";
-import { framesGeneratedCallback } from "./frames";
-import { segmentVideoGeneratedCallback } from "./segments";
+import { segmentVideoGeneratedCallback } from "./videoSegments";
 const http = httpRouter();
 
 http.route({
@@ -20,20 +15,15 @@ http.route({
   method: "OPTIONS",
   handler: sendImageOptions,
 });
-http.route({
-  path: "/updateStorageIdToSegment",
-  method: "POST",
-  handler: updateStorageIdToSegment,
-});
+// http.route({
+//   path: "/updateStorageIdToSegment",
+//   method: "POST",
+//   handler: updateStorageIdToSegment,
+// });
 http.route({
   path: "/voiceGeneratedCallback",
   method: "POST",
   handler: voiceGeneratedCallback,
-});
-http.route({
-  path: "/framesGeneratedCallback",
-  method: "POST",
-  handler: framesGeneratedCallback,
 });
 http.route({
   path: "/segmentVideoGeneratedCallback",

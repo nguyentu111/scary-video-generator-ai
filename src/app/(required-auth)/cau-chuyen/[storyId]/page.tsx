@@ -37,7 +37,7 @@ export default function Page({
 }: {
   params: { storyId: Id<"stories"> };
 }) {
-  const segments = useQuery(api.segments.getByStoryId, { storyId });
+  const segments = useQuery(api.storySegments.getByStoryId, { storyId });
   const story = useQuery(api.stories.get, { id: storyId });
   return (
     <div className="h-full py-12">
@@ -68,25 +68,38 @@ function SegmentItem({
   index,
 }: {
   segment: {
-    _id: Id<"segments">;
+    _id: Id<"storySegments">;
     _creationTime: number;
-    imageUrl?: string;
     storyId: Id<"stories">;
     text: string;
-    imagePromt: string;
-    imageStatus: string;
+    imagePrompt: string;
+    order: number;
+    imageStatus:
+      | {
+          status: "pending";
+          details: string;
+        }
+      | {
+          status: "failed";
+          reason: string;
+          elapsedMs: number;
+        }
+      | {
+          status: "saved";
+          elapsedMs: number;
+          imageUrl: string;
+        };
   };
   index: number;
 }) {
-  const mutate = useMutation(api.segments.edit);
+  const mutate = useMutation(api.storySegments.edit);
   const ref = useRef<HTMLDivElement | null>(null);
   const { setOpen } = useModal();
   const handleSaveText = useDebounceCallback(async () => {
     await mutate({
-      text: ref.current?.textContent ?? "",
       id: segment._id,
-      imagePromt: segment.imagePromt,
-      imageUrl: segment.imageUrl,
+      text: ref.current?.textContent ?? "",
+      imagePrompt: segment.imagePrompt,
     });
   }, 1000);
   const handleDownload = (imageUrl: string, fileName: string) => {
@@ -112,23 +125,27 @@ function SegmentItem({
             align="end"
           >
             <div className="">
-              {segment.imageUrl && (
+              {segment.imageStatus.status === "saved" ? (
                 <div
                   onClick={() =>
-                    handleDownload(segment.imageUrl!, `doan_${index + 1}.png}`)
+                    handleDownload(
+                      //@ts-ignore
+                      segment.imageStatus.imageUrl,
+                      `doan_${index + 1}.png}`,
+                    )
                   }
                   className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm hover:bg-black"
                 >
                   <DownloadIcon className="h-4 w-4" />
                   Tải ảnh
                 </div>
-              )}
+              ) : null}
               <div
                 onClick={() =>
                   setOpen(
                     <CustomModal title="Sửa ảnh" subheading="">
                       <ImagePromtChangeForm
-                        prompt={segment.imagePromt}
+                        prompt={segment.imagePrompt}
                         segmentId={segment._id}
                       />
                     </CustomModal>,
@@ -148,15 +165,15 @@ function SegmentItem({
         </Popover>
       </div>
       <div className="aspect-video">
-        {segment.imageStatus === "success" ? (
+        {segment.imageStatus.status === "saved" ? (
           <Image
-            src={segment.imageUrl!}
+            src={segment.imageStatus.imageUrl}
             height={300}
             width={533}
             className="h-full w-full"
-            alt={segment.imagePromt}
+            alt={segment.imagePrompt}
           />
-        ) : segment.imageStatus === "creating" ? (
+        ) : segment.imageStatus.status === "pending" ? (
           <div className="flex h-full w-full items-center justify-center gap-2">
             <span>Ảnh đang tạo </span>
             <LoaderIcon className="h-5 w-5 animate-spin" />
@@ -184,7 +201,7 @@ const ImagePromtChangeForm = ({
   segmentId,
 }: {
   prompt: string;
-  segmentId: Id<"segments">;
+  segmentId: Id<"storySegments">;
 }) => {
   const { setClose } = useModal();
   const action = useAction(api.images.regenerateImage);

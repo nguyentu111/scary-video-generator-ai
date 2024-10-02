@@ -3,32 +3,32 @@ import { authTables } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 const schema = defineSchema({
   ...authTables,
-
   stories: defineTable({
     name: v.string(),
     userId: v.id("users"),
     content: v.string(),
   }),
-  segments: defineTable({
+  storySegments: defineTable({
     text: v.string(),
-    imagePromt: v.string(),
-    imageUrl: v.optional(v.string()),
-    imageStatus: v.union(
-      v.literal("none"),
-      v.literal("creating"),
-      v.literal("error"),
-      v.literal("success"),
-    ),
+    imagePrompt: v.string(),
     storyId: v.id("stories"),
     order: v.number(),
-    voiceUrl: v.optional(v.string()),
-    voiceDuration: v.optional(v.number()),
-    isFramesGenerated: v.optional(v.boolean()),
-    videoUrl: v.optional(v.string()),
-    videoStatus: v.optional(
-      v.union(v.literal("creating"), v.literal("error"), v.literal("success")),
+    imageStatus: v.union(
+      v.object({
+        status: v.literal("pending"),
+        details: v.string(),
+      }),
+      v.object({
+        status: v.literal("failed"),
+        reason: v.string(),
+        elapsedMs: v.number(),
+      }),
+      v.object({
+        status: v.literal("saved"),
+        imageUrl: v.string(),
+        elapsedMs: v.number(),
+      }),
     ),
-    voiceSrt: v.optional(v.string()),
   }),
   logs: defineTable({
     messsage: v.string(),
@@ -38,11 +38,63 @@ const schema = defineSchema({
   videos: defineTable({
     storyId: v.id("stories"),
     name: v.string(),
-    videoUrl: v.optional(v.string()),
-    status: v.union(
-      v.literal("creating"),
-      v.literal("success"),
-      v.literal("error"),
+    result: v.union(
+      v.object({
+        status: v.literal("pending"),
+        details: v.string(),
+      }),
+      v.object({
+        status: v.literal("failed"),
+        reason: v.string(),
+        elapsedMs: v.number(),
+      }),
+      v.object({
+        status: v.literal("saved"),
+        videoUrl: v.string(),
+        elapsedMs: v.number(),
+      }),
+    ),
+  }),
+  videoSegments: defineTable({
+    videoId: v.id("videos"),
+    text: v.string(),
+    imagePrompt: v.string(),
+    imageUrl: v.string(),
+    order: v.number(),
+    voiceStatus: v.union(
+      v.object({
+        status: v.literal("pending"),
+        details: v.string(),
+      }),
+      v.object({
+        status: v.literal("failed"),
+        reason: v.string(),
+        elapsedMs: v.number(),
+      }),
+      v.object({
+        status: v.literal("saved"),
+        voiceDuration: v.number(),
+        voiceUrl: v.string(),
+        voiceSrt: v.string(),
+        elapsedMs: v.number(),
+      }),
+    ),
+
+    videoStatus: v.union(
+      v.object({
+        status: v.literal("pending"),
+        details: v.string(),
+      }),
+      v.object({
+        status: v.literal("failed"),
+        reason: v.string(),
+        elapsedMs: v.number(),
+      }),
+      v.object({
+        status: v.literal("saved"),
+        videoUrl: v.string(),
+        elapsedMs: v.number(),
+      }),
     ),
   }),
 });
