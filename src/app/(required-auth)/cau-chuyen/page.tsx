@@ -4,8 +4,8 @@ import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
-import { useQuery } from "convex/react";
-import { EllipsisVertical, PenIcon, TrashIcon } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { EllipsisVertical, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "~/convex/_generated/api";
@@ -18,6 +18,10 @@ export default function Page({
 }) {
   const stories = useQuery(api.stories.getStories);
   const router = useRouter();
+  const mutateDelete = useMutation(api.stories.deleteStory);
+  const handleDelete = async (id: Id<"stories">) => {
+    await mutateDelete({ id });
+  };
   return (
     <div className="h-full">
       {stories?.length === 0 && (
@@ -45,11 +49,12 @@ export default function Page({
                   className="w-fit rounded-lg border border-purple-500 !p-0"
                   align="end"
                 >
-                  <div className="">
-                    <div className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm text-rose-500 hover:bg-black">
-                      <TrashIcon className="h-4 w-4" />
-                      Xóa
-                    </div>
+                  <div
+                    onClick={() => handleDelete(s._id)}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm text-rose-500 hover:bg-black"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                    Xóa
                   </div>
                 </PopoverContent>
               </Popover>

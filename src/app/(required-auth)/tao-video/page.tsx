@@ -27,7 +27,7 @@ const schema = z.object({
   story: z.string().min(1, "Câu chuyện ít nhất 200 kí tự"),
 });
 
-const page = () => {
+const Page = () => {
   const user = useQuery(api.users.viewer);
   const router = useRouter();
   console.log({ user });
@@ -93,7 +93,7 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
 function UnauthenticatedSkeleton() {
   return (
     <div className="">

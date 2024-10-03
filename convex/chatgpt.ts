@@ -27,13 +27,14 @@ export const splitToSegment = internalAction({
       role: "system",
       content: `You are an AI that creates horror videos based on the story provided by the user. Your task is to analyze the story, divide it into smaller segments, and create image prompts for each segment to assist an API in generating realistic images.
         Requirements:
-        Analyze the story: Read the story input by the user and split it into smaller segments, each with a length of 2 to 4 sentences.
+        Analyze the story: Read the story input by the user and split it into smaller segments, each with a length of 4 to 8 sentences.
         Create image prompts: Based on the content of each segment, generate a detailed image description (image prompt). This description should reflect the context, emotions, and atmosphere of that segment while being aligned with the horror theme.
         Format: For each segment, use the following format:
         Segment: [Content of the segment]
         Image prompt: [Detailed description for the image, including elements such as color, lighting, setting, emotions, and key objects in the scene.]
         Return the response as a Json array.
         Note: Ensure that the image prompts can be easily translated into real images, focusing on creating the creepy and tense atmosphere of the story.
+        If there is people in the story, make sure to decribe to keep people's appearance consistent over segment's image prompts.
         
         `,
     };
@@ -55,26 +56,45 @@ export const splitToSegment = internalAction({
         function: "splitToSegment",
       });
       if (segmentArray) {
-        await ctx.runMutation(internal.segments.saveSegments, {
-          segments: segmentArray,
-          storyId: args.storyId,
-        });
-        const segments = await ctx.runQuery(api.segments.getByStoryId, {
-          storyId: args.storyId,
-        });
+        const segmentIds = await ctx.runMutation(
+          internal.storySegments.saveSegments,
+          {
+            segments: segmentArray,
+            storyId: args.storyId,
+          },
+        );
+        //TODO :generate image for each segment prompt
         await Promise.all(
-          segments.map((s) =>
-            ctx.runAction(internal.sqs.sendSqsMessageGenerateImage, {
-              message: s.imagePromt ?? "",
-              attributes: {
-                segmentId: {
-                  DataType: "String",
-                  StringValue: s._id.toString(),
-                },
-              },
+          segmentArray.map((s, i) =>
+            ctx.scheduler.runAfter(0, internal.replicate.generateImage, {
+              prompt: s.image,
+              segmentId: segmentIds[i]!,
+              storyId: args.storyId,
             }),
           ),
         );
+        // await ctx.scheduler.runAfter(30, internal.storySegments.timeout, { submissionId });
+        // await Promise.all(
+        //   segmentArray.map((segment, i) =>
+        //     ctx.scheduler.runAfter(
+        //       0,
+        //       internal.sqs.sendSqsMessageGenerateImage,
+        //       {
+        //         message: segment.image ?? "",
+        //         attributes: {
+        //           segmentId: {
+        //             DataType: "String",
+        //             StringValue: segmentIds[i]!,
+        //           },
+        //           folder: {
+        //             DataType: "String",
+        //             StringValue: `images/story_` + s.storyId,
+        //           },
+        //         },
+        //       },
+        //     ),
+        //   ),
+        // );
       } else {
         await ctx.runMutation(internal.logs.create, {
           message: "Fail to get segments array from chatgpt",
