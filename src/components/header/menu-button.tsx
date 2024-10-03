@@ -6,7 +6,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookIcon, MenuIcon, SearchIcon, UsersIcon } from "lucide-react";
+import {
+  BookIcon,
+  BookOpenText,
+  FilmIcon,
+  MenuIcon,
+  SearchIcon,
+  UsersIcon,
+  VideoIcon,
+} from "lucide-react";
 import Link from "next/link";
 
 export function MenuButton() {
@@ -18,23 +26,26 @@ export function MenuButton() {
       <DropdownMenuContent className="space-y-2">
         <DropdownMenuItem asChild>
           <Link
-            href="/dashboard"
+            href="/tao-video"
             className="flex cursor-pointer items-center gap-2"
           >
-            <UsersIcon className="h-4 w-4" /> Your Groups
+            <VideoIcon className="h-4 w-4" /> Tạo video
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link
-            href="/browse"
+            href="/cau-chuyen"
             className="flex cursor-pointer items-center gap-2"
           >
-            <SearchIcon className="h-4 w-4" /> Browse Groups
+            <BookOpenText className="h-4 w-4" /> Câu chuyện
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/docs" className="flex cursor-pointer items-center gap-2">
-            <BookIcon className="h-4 w-4" /> API Docs
+          <Link
+            href="/video-cua-toi"
+            className="flex cursor-pointer items-center gap-2"
+          >
+            <FilmIcon className="h-4 w-4" /> Video của tôi
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>

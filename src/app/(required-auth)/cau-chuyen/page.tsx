@@ -36,7 +36,7 @@ export default function Page({
           </Button>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-8 py-12">
+      <div className="grid grid-cols-1 gap-8 py-12 md:grid-cols-2">
         {stories?.map((s, i) => (
           <div key={s._id} className="rounded-xl border border-purple-500">
             <div className="flex justify-between border-b border-purple-500 px-4 py-2">

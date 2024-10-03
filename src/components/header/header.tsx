@@ -49,7 +49,7 @@ export function Header() {
                 <Button
                   variant={"link"}
                   asChild
-                  className="flex items-center justify-center gap-2"
+                  className="hidden items-center justify-center gap-2 md:flex"
                 >
                   <Link
                     href={"/tao-video"}
@@ -61,7 +61,7 @@ export function Header() {
                 <Button
                   variant={"link"}
                   asChild
-                  className="flex items-center justify-center gap-2"
+                  className="hidden items-center justify-center gap-2 md:flex"
                 >
                   <Link
                     className={cn(amatic.className, "!text-[24px] !font-bold")}
@@ -73,7 +73,7 @@ export function Header() {
                 <Button
                   variant={"link"}
                   asChild
-                  className="flex items-center justify-center gap-2"
+                  className="hidden items-center justify-center gap-2 md:flex"
                 >
                   <Link
                     className={cn(amatic.className, "!text-[24px] !font-bold")}
@@ -160,7 +160,7 @@ function ProfileDropdown() {
         <DropdownMenuItem asChild className="cursor-pointer">
           <div className="flex w-full items-center" onClick={() => signOut()}>
             <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            Đăng xuất
           </div>
         </DropdownMenuItem>
       </DropdownMenuContent>

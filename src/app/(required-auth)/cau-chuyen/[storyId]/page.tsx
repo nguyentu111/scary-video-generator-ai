@@ -31,7 +31,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/convex/_generated/api";
-import { Id } from "~/convex/_generated/dataModel";
+import { Doc, Id } from "~/convex/_generated/dataModel";
 export default function Page({
   params: { storyId },
 }: {
@@ -51,7 +51,7 @@ export default function Page({
       {segments?.length !== undefined && segments.length > 0 && (
         <>
           <h1 className="w-full text-center text-[40px]">{story?.name}</h1>
-          <div className="grid grid-cols-2 gap-8 py-12">
+          <div className="flex flex-wrap justify-between gap-8 md:grid md:grid-cols-2">
             {segments?.map((s, i) => (
               <SegmentItem segment={s} index={i} key={s._id} />
             ))}
@@ -67,29 +67,7 @@ function SegmentItem({
   segment,
   index,
 }: {
-  segment: {
-    _id: Id<"storySegments">;
-    _creationTime: number;
-    storyId: Id<"stories">;
-    text: string;
-    imagePrompt: string;
-    order: number;
-    imageStatus:
-      | {
-          status: "pending";
-          details: string;
-        }
-      | {
-          status: "failed";
-          reason: string;
-          elapsedMs: number;
-        }
-      | {
-          status: "saved";
-          elapsedMs: number;
-          imageUrl: string;
-        };
-  };
+  segment: Doc<"storySegments">;
   index: number;
 }) {
   const mutate = useMutation(api.storySegments.edit);
@@ -134,7 +112,7 @@ function SegmentItem({
                       `doan_${index + 1}.png}`,
                     )
                   }
-                  className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm hover:bg-black"
+                  className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 px-4 py-2 text-sm dark:bg-gray-900 dark:hover:bg-black"
                 >
                   <DownloadIcon className="h-4 w-4" />
                   Tải ảnh
@@ -151,12 +129,12 @@ function SegmentItem({
                     </CustomModal>,
                   )
                 }
-                className="flex cursor-pointer items-center gap-2 border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm hover:bg-black"
+                className="flex cursor-pointer items-center gap-2 border-b border-purple-500 px-4 py-2 text-sm dark:bg-gray-900 dark:hover:bg-black"
               >
                 <ImageIcon className="h-4 w-4" />
                 Sửa prompt hình ảnh
               </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm text-rose-500 hover:bg-black">
+              <div className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 px-4 py-2 text-sm hover:bg-black dark:bg-gray-900 dark:text-rose-500">
                 <TrashIcon className="h-4 w-4" />
                 Xóa đoạn này
               </div>
