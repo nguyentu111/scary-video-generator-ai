@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
 import { useMutation, useQuery } from "convex/react";
-import { EllipsisVertical, PenIcon, TrashIcon } from "lucide-react";
+import { EllipsisVertical, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "~/convex/_generated/api";

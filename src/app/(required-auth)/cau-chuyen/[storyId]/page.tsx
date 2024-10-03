@@ -48,7 +48,7 @@ export default function Page({
           </div>
         </div>
       )}
-      {segments?.length && segments.length > 0 && (
+      {segments?.length !== undefined && segments.length > 0 && (
         <>
           <h1 className="w-full text-center text-[40px]">{story?.name}</h1>
           <div className="grid grid-cols-2 gap-8 py-12">

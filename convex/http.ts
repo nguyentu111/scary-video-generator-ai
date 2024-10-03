@@ -3,6 +3,7 @@ import { sendImageOptions, sendImagePost } from "./images";
 import { auth } from "./auth";
 import { voiceGeneratedCallback } from "./voices";
 import { segmentVideoGeneratedCallback } from "./videoSegments";
+import { finalVideoGeneratedCallback } from "./videos";
 const http = httpRouter();
 
 http.route({
@@ -29,6 +30,11 @@ http.route({
   path: "/segmentVideoGeneratedCallback",
   method: "POST",
   handler: segmentVideoGeneratedCallback,
+});
+http.route({
+  path: "/finalVideoGeneratedCallback",
+  method: "POST",
+  handler: finalVideoGeneratedCallback,
 });
 auth.addHttpRoutes(http);
 export default http;

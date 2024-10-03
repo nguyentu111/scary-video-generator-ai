@@ -29,7 +29,7 @@ const schema = defineSchema({
         elapsedMs: v.number(),
       }),
     ),
-  }),
+  }).index("storyId", ["storyId"]),
   logs: defineTable({
     messsage: v.string(),
     function: v.string(),
@@ -54,7 +54,7 @@ const schema = defineSchema({
         elapsedMs: v.number(),
       }),
     ),
-  }),
+  }).index("storyId", ["storyId"]),
   videoSegments: defineTable({
     videoId: v.id("videos"),
     text: v.string(),
@@ -96,7 +96,7 @@ const schema = defineSchema({
         elapsedMs: v.number(),
       }),
     ),
-  }),
+  }).index("videoId", ["videoId"]),
 });
 
 export default schema;
