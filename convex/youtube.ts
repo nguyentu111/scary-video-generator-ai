@@ -2,7 +2,7 @@
 import { ConvexError, v } from "convex/values";
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
-import { action, internalAction } from "./_generated/server";
+import { action, internalAction, mutation } from "./_generated/server";
 import { auth } from "./auth";
 import { internal } from "./_generated/api";
 import axios from "axios";

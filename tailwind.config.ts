@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import { amatic } from "@/styles/fonts";
 const config = {
   darkMode: ["class"],
   content: [

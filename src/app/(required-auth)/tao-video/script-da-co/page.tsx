@@ -54,7 +54,7 @@ const Page = () => {
           {/* Let AI guide you through creating your story */}
         </p>
 
-        <div className="w-full max-w-[1000px] rounded-lg border-2 border-purple-500 p-8">
+        <div className="w-full max-w-[1000px] rounded-lg border-2 border-purple-500 bg-gray-100 p-8 dark:bg-gray-800">
           <Form {...form}>
             {/** @ts-ignore */}
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

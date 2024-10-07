@@ -195,7 +195,11 @@ export const checkCanProcessFinalVideo = internalAction({
       );
       const orderedSegment = segments.sort((a, b) => a.order - b.order);
       const segmentUrls = orderedSegment.map((s) => {
-        if (s.videoStatus.status === "saved") return s.videoStatus.videoUrl;
+        if (
+          s.videoStatus.status === "saved" ||
+          s.videoStatus.status === "cached"
+        )
+          return s.videoStatus.videoUrl;
         else throw new ConvexError("Segment video is not generated");
       });
       await ctx.runAction(internal.sqs.sendSqsMessageGenerateFinalVideo, {

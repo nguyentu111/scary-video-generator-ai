@@ -24,7 +24,7 @@ const CreateYourStory = () => {
       <div className="flex space-x-6 text-white">
         <Link
           href="/tao-video/script-da-co"
-          className="flex h-52 w-52 flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+          className="flex h-52 w-52 flex-col items-center rounded-lg bg-primary p-6 transition-colors hover:bg-primary-foreground"
         >
           <div className="mb-4 text-5xl">✏️</div>
           <p className="text-center font-semibold">Tôi đã có kịch bản</p>
@@ -39,7 +39,7 @@ const CreateYourStory = () => {
             });
             router.push("/cau-chuyen/" + storyId);
           }}
-          className="flex h-52 w-52 cursor-pointer flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+          className="flex h-52 w-52 cursor-pointer flex-col items-center rounded-lg bg-primary p-6 transition-colors hover:bg-primary-foreground"
         >
           <div className="mb-4 text-5xl">📄</div>
           <p className="text-center font-semibold">
@@ -49,7 +49,7 @@ const CreateYourStory = () => {
 
         <Link
           href="/tao-video/ai-tao-script"
-          className="flex h-52 w-52 flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+          className="flex h-52 w-52 flex-col items-center rounded-lg bg-primary p-6 transition-colors hover:bg-primary-foreground"
         >
           <div className="mb-4 text-5xl">✨</div>
           <p className="text-center font-semibold">Để AI tạo kịch bản</p>

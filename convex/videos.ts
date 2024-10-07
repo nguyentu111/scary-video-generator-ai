@@ -154,6 +154,11 @@ export const create = mutation({
                   ).videoUrl,
                 },
               });
+              await ctx.scheduler.runAfter(
+                0,
+                internal.videoSegments.checkCanProcessFinalVideo,
+                { videoId },
+              );
             } else
               await ctx.scheduler.runAfter(
                 0,
@@ -182,20 +187,20 @@ export const create = mutation({
               },
               voiceStatus: { status: "pending", details: "Creating voice ..." },
             });
-            // await ctx.scheduler.runAfter(
-            //   0,
-            //   internal.sqs.sendSqsMessageGenerateVoice,
-            //   {
-            //     attributes: {
-            //       segmentId: {
-            //         DataType: "String",
-            //         StringValue: videoSegmentId,
-            //       },
-            //       videoId: { DataType: "String", StringValue: videoId },
-            //     },
-            //     message: s.text,
-            //   },
-            // );
+            await ctx.scheduler.runAfter(
+              0,
+              internal.sqs.sendSqsMessageGenerateVoice,
+              {
+                attributes: {
+                  segmentId: {
+                    DataType: "String",
+                    StringValue: videoSegmentId,
+                  },
+                  videoId: { DataType: "String", StringValue: videoId },
+                },
+                message: s.text,
+              },
+            );
           }
         } else
           throw new ConvexError(
@@ -243,7 +248,8 @@ export const isCanCreateVideo = internalQuery({
     return (
       videoSegments.length > 1 &&
       videoSegments.every(
-        (v) => v.videoStatus.status === "saved" && v.videoStatus.videoUrl,
+        (v) =>
+          v.videoStatus.status === "saved" || v.videoStatus.status === "cached",
       )
     );
   },
