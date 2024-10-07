@@ -9,7 +9,7 @@ import { EllipsisVertical, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "~/convex/_generated/api";
-import { Id } from "~/convex/_generated/dataModel";
+import { Doc, Id } from "~/convex/_generated/dataModel";
 
 export default function Page({
   params: { storyId },
@@ -17,11 +17,7 @@ export default function Page({
   params: { storyId: Id<"stories"> };
 }) {
   const stories = useQuery(api.stories.getStories);
-  const router = useRouter();
-  const mutateDelete = useMutation(api.stories.deleteStory);
-  const handleDelete = async (id: Id<"stories">) => {
-    await mutateDelete({ id });
-  };
+
   return (
     <div className="h-full">
       {stories?.length === 0 && (
@@ -37,39 +33,51 @@ export default function Page({
         </div>
       )}
       <div className="grid grid-cols-1 gap-8 py-12 md:grid-cols-2">
-        {stories?.map((s, i) => (
-          <div key={s._id} className="rounded-xl border border-purple-500">
-            <div className="flex justify-between border-b border-purple-500 px-4 py-2">
-              <span className="font-bold"> {s.name}</span>
-              <Popover>
-                <PopoverTrigger>
-                  <EllipsisVertical />
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-fit rounded-lg border border-purple-500 !p-0"
-                  align="end"
-                >
-                  <div
-                    onClick={() => handleDelete(s._id)}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border-b border-purple-500 bg-gray-900 px-4 py-2 text-sm text-rose-500 hover:bg-black"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    Xóa
-                  </div>
-                </PopoverContent>
-              </Popover>
+        {stories?.map((s, i) => <StoryItem story={s} />)}
+      </div>
+    </div>
+  );
+}
+function StoryItem({ story }: { story: Doc<"stories"> }) {
+  const router = useRouter();
+  const mutateDelete = useMutation(api.stories.deleteStory);
+  const handleDelete = async (id: Id<"stories">) => {
+    await mutateDelete({ id });
+  };
+  return (
+    <div key={story._id} className="rounded-xl border border-purple-500">
+      <div className="flex justify-between border-b border-purple-500 px-4 py-2">
+        <span className="font-bold"> {story.name}</span>
+        <Popover>
+          <PopoverTrigger>
+            <EllipsisVertical />
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-fit rounded-lg border border-purple-500 !p-0"
+            align="end"
+          >
+            <div
+              onClick={() => handleDelete(story._id)}
+              className="flex cursor-pointer items-center gap-2 rounded-lg border-b border-purple-500 px-4 py-2 text-sm text-rose-500 dark:bg-gray-900 dark:hover:bg-black"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Xóa
             </div>
-            <div className="p-4 text-sm">{s.content}</div>
-            <div className="p-4">
-              <Button
-                className="bg-purple-500"
-                onClick={() => router.push(`/cau-chuyen/${s._id}`)}
-              >
-                Tạo video
-              </Button>
-            </div>
-          </div>
-        ))}
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="p-4">
+        <div className="line-clamp-4 overflow-hidden text-sm">
+          {story.content}
+        </div>
+      </div>
+      <div className="p-4">
+        <Button
+          className="bg-purple-500"
+          onClick={() => router.push(`/cau-chuyen/${story._id}`)}
+        >
+          Tạo video
+        </Button>
       </div>
     </div>
   );

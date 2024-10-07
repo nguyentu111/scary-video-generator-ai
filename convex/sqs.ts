@@ -42,7 +42,13 @@ export const sendSqsMessageGenerateImage = internalAction({
       const command = new SendMessageCommand({
         QueueUrl: AWS_QUEUE_GENERATE_IMAGE,
         DelaySeconds: 0,
-        MessageAttributes: args.attributes,
+        MessageAttributes: {
+          ...args.attributes,
+          nodeEnv: {
+            DataType: "String",
+            StringValue: process.env.NODE_ENV,
+          },
+        },
         MessageBody: "Realistic picture, " + args.message,
       });
 
@@ -87,7 +93,13 @@ export const sendSqsMessageGenerateVoice = internalAction({
       const command = new SendMessageCommand({
         QueueUrl: AWS_QUEUE_GENERATE_VOICE,
         DelaySeconds: 0,
-        MessageAttributes: args.attributes,
+        MessageAttributes: {
+          ...args.attributes,
+          convexNodeEnv: {
+            DataType: "String",
+            StringValue: process.env.NODE_ENV,
+          },
+        },
         MessageBody: args.message,
       });
 
@@ -182,6 +194,12 @@ export const sendSqsMessageGenerateSegmentVideo = internalAction({
         QueueUrl: AWS_QUEUE_GENERATE_SEGMENT_VIDEO,
         DelaySeconds: 0,
         MessageBody: JSON.stringify(args.message),
+        MessageAttributes: {
+          convexNodeEnv: {
+            DataType: "String",
+            StringValue: process.env.NODE_ENV,
+          },
+        },
       });
 
       const response = await client.send(command);
@@ -219,6 +237,12 @@ export const sendSqsMessageGenerateFinalVideo = internalAction({
         QueueUrl: AWS_QUEUE_GENERATE_FINAL_VIDEO,
         DelaySeconds: 0,
         MessageBody: JSON.stringify(args.message),
+        MessageAttributes: {
+          convexNodeEnv: {
+            DataType: "String",
+            StringValue: process.env.NODE_ENV,
+          },
+        },
       });
 
       const response = await client.send(command);

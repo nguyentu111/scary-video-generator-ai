@@ -31,7 +31,6 @@ import { amatic } from "@/styles/fonts";
 
 export function Header() {
   const user = useQuery(api.users.viewer);
-  console.log({ user });
   const { signIn } = useAuthActions();
   return (
     <div className="select-none border-b py-4">
@@ -43,45 +42,38 @@ export function Header() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
             {user && (
               <>
-                <Button
-                  variant={"link"}
-                  asChild
-                  className="hidden items-center justify-center gap-2 md:flex"
+                <Link
+                  href={"/tao-video"}
+                  className={cn(
+                    amatic.className,
+                    "flex items-center gap-2 !text-[24px] !font-bold",
+                  )}
                 >
-                  <Link
-                    href={"/tao-video"}
-                    className={cn(amatic.className, "!text-[24px] !font-bold")}
-                  >
-                    <VideoIcon className="h-6 w-6" /> Tạo video
-                  </Link>
-                </Button>
-                <Button
-                  variant={"link"}
-                  asChild
-                  className="hidden items-center justify-center gap-2 md:flex"
+                  <VideoIcon className="h-6 w-6" /> Tạo video
+                </Link>
+
+                <Link
+                  className={cn(
+                    amatic.className,
+                    "flex items-center gap-2 !text-[24px] !font-bold",
+                  )}
+                  href={"/cau-chuyen"}
                 >
-                  <Link
-                    className={cn(amatic.className, "!text-[24px] !font-bold")}
-                    href={"/cau-chuyen"}
-                  >
-                    <BookOpenText className="h-6 w-6" /> Câu chuyện của tôi
-                  </Link>
-                </Button>
-                <Button
-                  variant={"link"}
-                  asChild
-                  className="hidden items-center justify-center gap-2 md:flex"
+                  <BookOpenText className="h-6 w-6" /> Câu chuyện của tôi
+                </Link>
+
+                <Link
+                  className={cn(
+                    amatic.className,
+                    "flex items-center gap-2 !text-[24px] !font-bold",
+                  )}
+                  href={"/video-cua-toi"}
                 >
-                  <Link
-                    className={cn(amatic.className, "!text-[24px] !font-bold")}
-                    href={"/video-cua-toi"}
-                  >
-                    <FilmIcon className="h-6 w-6" /> Video của tôi
-                  </Link>
-                </Button>
+                  <FilmIcon className="h-6 w-6" /> Video của tôi
+                </Link>
               </>
             )}
           </div>

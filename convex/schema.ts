@@ -7,6 +7,29 @@ const schema = defineSchema({
     name: v.string(),
     userId: v.id("users"),
     content: v.string(),
+    createType: v.union(
+      v.literal("full-scripted"),
+      v.literal("by-segments"),
+      v.literal("by-ai"),
+    ),
+    AIGenerateInfo: v.optional(
+      v.object({
+        prompt: v.string(),
+        finishedRefine: v.boolean(),
+        status: v.union(
+          v.object({
+            state: v.literal("pending"),
+          }),
+          v.object({
+            state: v.literal("failed"),
+            reason: v.string(),
+          }),
+          v.object({
+            state: v.literal("saved"),
+          }),
+        ),
+      }),
+    ),
   }),
   storySegments: defineTable({
     text: v.string(),
@@ -26,6 +49,7 @@ const schema = defineSchema({
       v.object({
         status: v.literal("saved"),
         imageUrl: v.string(),
+        publicId: v.string(),
         elapsedMs: v.number(),
       }),
     ),
@@ -50,6 +74,7 @@ const schema = defineSchema({
       }),
       v.object({
         status: v.literal("saved"),
+        publicId: v.string(),
         videoUrl: v.string(),
         elapsedMs: v.number(),
       }),
@@ -73,10 +98,18 @@ const schema = defineSchema({
       }),
       v.object({
         status: v.literal("saved"),
+        publicId: v.string(),
         voiceDuration: v.number(),
         voiceUrl: v.string(),
         voiceSrt: v.string(),
         elapsedMs: v.number(),
+      }),
+      v.object({
+        status: v.literal("cached"),
+        publicId: v.string(),
+        voiceDuration: v.number(),
+        voiceUrl: v.string(),
+        voiceSrt: v.string(),
       }),
     ),
 
@@ -91,12 +124,26 @@ const schema = defineSchema({
         elapsedMs: v.number(),
       }),
       v.object({
+        publicId: v.string(),
         status: v.literal("saved"),
         videoUrl: v.string(),
         elapsedMs: v.number(),
       }),
+      v.object({
+        publicId: v.string(),
+        status: v.literal("cached"),
+        videoUrl: v.string(),
+      }),
     ),
   }).index("videoId", ["videoId"]),
+
+  channels: defineTable({
+    refreshToken: v.string(),
+    userId: v.id("users"),
+    expireAt: v.number(),
+    channelId: v.string(),
+    channelTitle: v.string(),
+  }).index("userId", ["userId"]),
 });
 
 export default schema;

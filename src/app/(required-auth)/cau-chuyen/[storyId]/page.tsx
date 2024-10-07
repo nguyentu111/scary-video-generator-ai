@@ -10,6 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -17,16 +18,20 @@ import { amatic } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
+  CheckIcon,
+  XCircle,
   DownloadIcon,
   EllipsisVertical,
   ImageIcon,
   Loader,
   LoaderIcon,
   TrashIcon,
+  PlusIcon,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { use, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
@@ -39,30 +44,90 @@ export default function Page({
 }) {
   const segments = useQuery(api.storySegments.getByStoryId, { storyId });
   const story = useQuery(api.stories.get, { id: storyId });
+
   return (
     <div className="h-full py-12">
-      {segments?.length === 0 && (
+      {story && segments?.length !== undefined && (
+        <>
+          <StoryTitle defaultName={story?.name} storyId={story?._id} />
+          <div className="justify-between gap-8 md:grid md:grid-cols-2">
+            {segments?.map((s, i) => (
+              <SegmentItem segment={s} index={i + 1} key={s._id} />
+            ))}
+            {story.AIGenerateInfo &&
+            story.AIGenerateInfo.finishedRefine === false ? (
+              <Link href={`/cau-chuyen/${story._id}/chinh-sua`}>
+                Tiếp tục chỉnh sửa
+              </Link>
+            ) : (
+              <CreateVideoButton storyId={storyId} name={story?.name!} />
+            )}
+          </div>
+        </>
+      )}
+      {segments?.length === 0 && story?.createType === "full-scripted" && (
         <div className="flex h-full items-center justify-center">
           <div className={cn(amatic.className, "text-[40px] font-bold")}>
             Đang phân tích, chờ chút
           </div>
         </div>
       )}
-      {segments?.length !== undefined && segments.length > 0 && (
-        <>
-          <h1 className="w-full text-center text-[40px]">{story?.name}</h1>
-          <div className="flex flex-wrap justify-between gap-8 md:grid md:grid-cols-2">
-            {segments?.map((s, i) => (
-              <SegmentItem segment={s} index={i} key={s._id} />
-            ))}
-            <CreateVideoButton storyId={storyId} name={story?.name!} />
-          </div>
-        </>
-      )}
     </div>
   );
 }
+function StoryTitle({
+  defaultName,
+  storyId,
+}: {
+  defaultName: string;
+  storyId: Id<"stories">;
+}) {
+  const [name, setName] = useState(defaultName);
+  const [isEditingName, setIsEdittingName] = useState(false);
+  const mutateEdit = useMutation(api.stories.edit);
+  const handleEditName = useDebounceCallback(async (name: string) => {
+    await mutateEdit({ name, id: storyId });
+  }, 500);
 
+  const handleSave = async () => {
+    await handleEditName(name);
+    setIsEdittingName(false);
+  };
+
+  const handleCancel = () => {
+    setName(defaultName);
+    setIsEdittingName(false);
+  };
+
+  return (
+    <>
+      {!isEditingName ? (
+        <h1
+          className="min-w-6 p-4 text-[40px]"
+          onClick={() => setIsEdittingName(true)}
+        >
+          {name}
+        </h1>
+      ) : (
+        <div className="flex items-center gap-4">
+          <Input
+            className="my-4 w-fit min-w-6 py-8 text-[40px]"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+            }}
+          />
+          <Button onClick={handleSave}>
+            <CheckIcon className="h-4 w-4" /> {/* Add Check Icon */}
+          </Button>
+          <Button onClick={handleCancel}>
+            <XCircle className="h-4 w-4" /> {/* Add Cancel Icon */}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
 function SegmentItem({
   segment,
   index,
@@ -70,11 +135,11 @@ function SegmentItem({
   segment: Doc<"storySegments">;
   index: number;
 }) {
-  const mutate = useMutation(api.storySegments.edit);
+  const mutateSaveText = useMutation(api.storySegments.edit);
   const ref = useRef<HTMLDivElement | null>(null);
   const { setOpen } = useModal();
   const handleSaveText = useDebounceCallback(async () => {
-    await mutate({
+    await mutateSaveText({
       id: segment._id,
       text: ref.current?.textContent ?? "",
       imagePrompt: segment.imagePrompt,
@@ -89,11 +154,30 @@ function SegmentItem({
     link.click();
     document.body.removeChild(link);
   };
-
+  const mutateAddSegment = useMutation(api.storySegments.insert);
+  const handleAddSegment = () => {
+    mutateAddSegment({
+      imagePrompt: "",
+      storyId: segment.storyId,
+      text: "",
+      order: segment.order + 1,
+    });
+  };
+  const [isDeletingSegment, setIsDeletingSegment] = useState(false);
+  const mutateDeleteSegment = useMutation(api.storySegments.deleteSegment);
   return (
-    <div key={segment._id} className="rounded-xl border border-purple-500">
+    <div
+      key={segment._id}
+      className="relative rounded-xl border border-purple-500"
+    >
+      <div
+        onClick={() => handleAddSegment()}
+        className="absolute right-0 top-1/2 translate-x-1/2 cursor-pointer rounded-full border-2 border-purple-500 bg-white p-1 dark:bg-black"
+      >
+        <PlusIcon className="h-4 w-4" />
+      </div>
       <div className="flex justify-between border-b border-purple-500 px-4 py-2">
-        <span>Đoạn {index + 1}</span>
+        <span>Đoạn {index}</span>
         <Popover>
           <PopoverTrigger>
             <EllipsisVertical />
@@ -134,9 +218,17 @@ function SegmentItem({
                 <ImageIcon className="h-4 w-4" />
                 Sửa prompt hình ảnh
               </div>
-              <div className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 px-4 py-2 text-sm hover:bg-black dark:bg-gray-900 dark:text-rose-500">
+              <div
+                onClick={() => {
+                  if (!isDeletingSegment) {
+                    setIsDeletingSegment(true);
+                    mutateDeleteSegment({ id: segment._id });
+                  }
+                }}
+                className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 px-4 py-2 text-sm text-rose-500 dark:bg-gray-900"
+              >
                 <TrashIcon className="h-4 w-4" />
-                Xóa đoạn này
+                {isDeletingSegment ? "Đang xóa..." : "Xóa đoạn này"}
               </div>
             </div>
           </PopoverContent>
@@ -151,10 +243,14 @@ function SegmentItem({
             className="h-full w-full"
             alt={segment.imagePrompt}
           />
-        ) : segment.imageStatus.status === "pending" ? (
+        ) : segment.imageStatus.status === "pending" && segment.imagePrompt ? (
           <div className="flex h-full w-full items-center justify-center gap-2">
             <span>Ảnh đang tạo </span>
             <LoaderIcon className="h-5 w-5 animate-spin" />
+          </div>
+        ) : !segment.imagePrompt ? (
+          <div className="flex h-full w-full items-center justify-center">
+            <span>Hãy tạo prompt cho ảnh</span>
           </div>
         ) : (
           <div className="flex h-full w-full items-center justify-center">
@@ -163,7 +259,9 @@ function SegmentItem({
         )}
       </div>
       <div
-        className="w-full px-4 py-2 text-sm"
+        className={cn(
+          "min-h-[100px] w-full border-t border-t-purple-500 px-4 py-2 text-sm",
+        )}
         contentEditable
         ref={ref}
         onInput={() => handleSaveText()}

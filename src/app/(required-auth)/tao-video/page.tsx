@@ -1,104 +1,62 @@
 "use client";
-import React from "react";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button"; // Import Shadcn UI components
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "~/convex/_generated/api";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AuthLoader } from "@/components/shared/auth-loader";
+import { cn } from "@/lib/utils";
+import { amatic } from "@/styles/fonts";
+import { useMutation } from "convex/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
+import React from "react";
+import { api } from "~/convex/_generated/api";
 
-const schema = z.object({
-  name: z.string().min(1),
-  story: z.string().min(1, "Câu chuyện ít nhất 200 kí tự"),
-});
-
-const Page = () => {
-  const user = useQuery(api.users.viewer);
-  const router = useRouter();
-  console.log({ user });
+const CreateYourStory = () => {
   const mutate = useMutation(api.stories.createStory);
-  const form = useForm({
-    resolver: zodResolver(schema),
-  });
-  const onSubmit = async (data: z.infer<typeof schema>) => {
-    console.log(data);
-    const id = await mutate({ ...data, userId: user!._id });
-    router.push("/cau-chuyen/" + id);
-  };
-
+  const router = useRouter();
   return (
-    <AuthLoader authLoading={<UnauthenticatedSkeleton />}>
-      <Form {...form}>
-        {/** @ts-ignore */}
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Tên video</FormLabel>
-                <FormControl>
-                  <Input {...field} required />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="story"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Câu chuyện</FormLabel>
-                <FormControl>
-                  <Textarea
-                    className="min-h-[400px]"
-                    {...field}
-                    placeholder="Nhập câu chuyện kinh dị của bạn"
-                  ></Textarea>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <div className="flex h-full flex-col items-center justify-center">
+      <h1
+        className={cn(amatic.className, "mb-4 font-amatic text-5xl font-[700]")}
+      >
+        Tạo câu chuyện của bạn
+      </h1>
+      <p className="mb-8 text-lg text-gray-300">
+        {/* Transform your ideas into captivating visual narratives */}
+      </p>
 
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting || form.formState.isLoading}
-          >
-            {form.formState.isSubmitting || form.formState.isLoading ? (
-              <Loader2Icon className="h-4 w-4 animate-spin" />
-            ) : (
-              <span>Submit</span>
-            )}
-          </Button>
-        </form>
-      </Form>
-    </AuthLoader>
+      <div className="flex space-x-6 text-white">
+        <Link
+          href="/tao-video/script-da-co"
+          className="flex h-52 w-52 flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+        >
+          <div className="mb-4 text-5xl">✏️</div>
+          <p className="text-center font-semibold">Tôi đã có kịch bản</p>
+        </Link>
+
+        <div
+          onClick={async () => {
+            const storyId = await mutate({
+              name: "Untitled",
+              story: "",
+              createType: "by-segments",
+            });
+            router.push("/cau-chuyen/" + storyId);
+          }}
+          className="flex h-52 w-52 cursor-pointer flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+        >
+          <div className="mb-4 text-5xl">📄</div>
+          <p className="text-center font-semibold">
+            Tôi muốn tạo kịch bản theo từng đoạn
+          </p>
+        </div>
+
+        <Link
+          href="/tao-video/ai-tao-script"
+          className="flex h-52 w-52 flex-col items-center rounded-lg bg-purple-700 p-6 transition-colors hover:bg-purple-800"
+        >
+          <div className="mb-4 text-5xl">✨</div>
+          <p className="text-center font-semibold">Để AI tạo kịch bản</p>
+        </Link>
+      </div>
+    </div>
   );
 };
 
-export default Page;
-function UnauthenticatedSkeleton() {
-  return (
-    <div className="">
-      <Skeleton className="h-12 w-full" />
-      <Skeleton className="mt-8 h-[400px] w-full" />
-    </div>
-  );
-}
+export default CreateYourStory;
