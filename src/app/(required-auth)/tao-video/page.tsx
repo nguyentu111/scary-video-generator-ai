@@ -16,7 +16,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "~/convex/_generated/api";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuthLoader } from "@/components/shared/auth-loader";
 import { useRouter } from "next/navigation";
