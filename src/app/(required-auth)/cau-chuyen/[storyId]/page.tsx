@@ -336,9 +336,17 @@ const ImagePromtChangeForm = ({
     </Form>
   );
 };
-function CreateVideoButton({}: { storyId: Id<"stories">; name: string }) {
+function CreateVideoButton({
+  name,
+  storyId,
+}: {
+  storyId: Id<"stories">;
+  name: string;
+}) {
   const router = useRouter();
+  const mutateCreate = useMutation(api.videos.create);
   const handleCreate = async () => {
+    await mutateCreate({ storyId, name });
     router.push("/video-cua-toi");
   };
   return (
