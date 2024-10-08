@@ -9,7 +9,7 @@ import { EllipsisVertical, TrashIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "~/convex/_generated/api";
-import { Doc, Id } from "~/convex/_generated/dataModel";
+import type { Doc, Id } from "~/convex/_generated/dataModel";
 
 export default function Page({
   params: { storyId },
@@ -33,7 +33,7 @@ export default function Page({
         </div>
       )}
       <div className="grid grid-cols-1 gap-8 py-12 md:grid-cols-2">
-        {stories?.map((s, i) => <StoryItem key={s._id} story={s} />)}
+        {stories?.map((s) => <StoryItem key={s._id} story={s} />)}
       </div>
     </div>
   );

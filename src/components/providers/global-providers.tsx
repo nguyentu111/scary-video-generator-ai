@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ThemeProvider } from "./theme-provider";
 import { ModalProvider } from "./modal-provider";
 import { ConvexClientProvider } from "./convex-client-provider";

@@ -141,7 +141,7 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
           : curr.voiceStatus.status) +
         "\n");
     }, "");
-    const videoStatus = videoSegments.reduce((acc, curr, i) => {
+    const videoStatus = videoSegments.reduce((acc, curr) => {
       return (acc +=
         "Video " +
         curr.order +

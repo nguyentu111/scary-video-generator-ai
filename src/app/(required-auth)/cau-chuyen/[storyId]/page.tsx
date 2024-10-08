@@ -36,7 +36,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/convex/_generated/api";
-import { Doc, Id } from "~/convex/_generated/dataModel";
+import type { Doc, Id } from "~/convex/_generated/dataModel";
 export default function Page({
   params: { storyId },
 }: {
@@ -336,14 +336,7 @@ const ImagePromtChangeForm = ({
     </Form>
   );
 };
-function CreateVideoButton({
-  storyId,
-  name,
-}: {
-  storyId: Id<"stories">;
-  name: string;
-}) {
-  const mutate = useMutation(api.videos.create);
+function CreateVideoButton({}: { storyId: Id<"stories">; name: string }) {
   const router = useRouter();
   const handleCreate = async () => {
     router.push("/video-cua-toi");

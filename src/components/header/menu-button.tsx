@@ -6,15 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  BookIcon,
-  BookOpenText,
-  FilmIcon,
-  MenuIcon,
-  SearchIcon,
-  UsersIcon,
-  VideoIcon,
-} from "lucide-react";
+import { BookOpenText, FilmIcon, MenuIcon, VideoIcon } from "lucide-react";
 import Link from "next/link";
 
 export function MenuButton() {

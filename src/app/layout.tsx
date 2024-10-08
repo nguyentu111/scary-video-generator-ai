@@ -2,7 +2,7 @@ import "@/styles/globals.css";
 
 import { type Metadata } from "next";
 
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Archivo, Libre_Franklin } from "next/font/google";
 import { Providers } from "../components/providers/global-providers";
 import NextTopLoader from "nextjs-toploader";

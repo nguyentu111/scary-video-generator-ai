@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 import { api } from "~/convex/_generated/api";
-import { Doc, Id } from "~/convex/_generated/dataModel";
+import type { Doc, Id } from "~/convex/_generated/dataModel";
 const uploadFormShema = z.object({
   name: z.string().min(20, "Tên ít nhất 20 kí tự"),
   channel: z.string().min(1, "Hãy chọn channel"),
@@ -46,21 +46,22 @@ export const UploadToYoutubeForm = ({ video }: { video: Doc<"videos"> }) => {
     resolver: zodResolver(uploadFormShema),
   });
   const onSubmit = async (data: z.infer<typeof uploadFormShema>) => {
-    try {
-      setIsPostingToYoutube(true);
-      const response = await mutateUpload({
-        videoId: video._id,
-        channelId: data.channel as Id<"channels">,
-        name: data.name,
-        description: data.description,
-      });
-      console.log(response);
-      toast.success("Video scheduled for YouTube.");
-    } catch (error) {
-      toast.error((error as { message: string }).message);
-    } finally {
-      setIsPostingToYoutube(false);
-    }
+    if (!isPostingToYoutube)
+      try {
+        setIsPostingToYoutube(true);
+        const response = await mutateUpload({
+          videoId: video._id,
+          channelId: data.channel as Id<"channels">,
+          name: data.name,
+          description: data.description,
+        });
+        console.log(response);
+        toast.success("Video scheduled for YouTube.");
+      } catch (error) {
+        toast.error((error as { message: string }).message);
+      } finally {
+        setIsPostingToYoutube(false);
+      }
   };
   return (
     <Form {...form}>
