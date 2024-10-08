@@ -22,10 +22,11 @@ export const generateImage = internalAction({
       input,
     })) as string[];
     const imageUrl = output[0]!;
-    const savedUrl = await ctx.runAction(
+    const savedRes = await ctx.runAction(
       internal.cloudinary.uploadImageFromUrl,
       {
-        folder: "images/story_" + args.storyId,
+        folder:
+          `scary_video/${process.env.NODE_ENV}/images/story_` + args.storyId,
         imageUrl,
         filename: md5(args.prompt),
       },
@@ -34,7 +35,8 @@ export const generateImage = internalAction({
       id: args.segmentId,
       imageStatus: {
         status: "saved",
-        imageUrl: savedUrl,
+        imageUrl: savedRes.url,
+        publicId: savedRes.public_id,
         elapsedMs: Date.now() - time,
       },
     });

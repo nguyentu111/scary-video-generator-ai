@@ -6,21 +6,25 @@ import { httpAction } from "./_generated/server";
 export const voiceGeneratedCallback = httpAction(async (ctx, request) => {
   try {
     const data = (await request.json()) as {
-      voiceUrl: string;
-      voiceDuration: number;
       segmentId: Id<"videoSegments">;
-      videoId: string;
-      srt: string;
+      voiceStatus:
+        | {
+            status: "failed";
+            reason: string;
+            elapsedMs: number;
+          }
+        | {
+            status: "saved";
+            elapsedMs: number;
+            publicId: string;
+            voiceDuration: number;
+            voiceUrl: string;
+            voiceSrt: string;
+          };
     };
     await ctx.runMutation(internal.videoSegments.editVoiceStatus, {
       id: data.segmentId,
-      voiceStatus: {
-        status: "saved",
-        elapsedMs: 999,
-        voiceDuration: data.voiceDuration,
-        voiceSrt: data.srt,
-        voiceUrl: data.voiceUrl,
-      },
+      voiceStatus: data.voiceStatus,
     });
     const segment = await ctx.runQuery(api.videoSegments.get, {
       id: data.segmentId,
@@ -30,19 +34,20 @@ export const voiceGeneratedCallback = httpAction(async (ctx, request) => {
         "voices.voiceGeneratedCallback.error: segment not found!",
       );
     }
-    await ctx.scheduler.runAfter(
-      0,
-      internal.sqs.sendSqsMessageGenerateSegmentVideo,
-      {
-        message: {
-          imageUrl: segment.imageUrl,
-          segmentId: data.segmentId,
-          voiceUrl: data.voiceUrl,
-          voiceDuration: data.voiceDuration,
-          voiceSrt: data.srt,
+    if (data.voiceStatus.status === "saved")
+      await ctx.scheduler.runAfter(
+        0,
+        internal.sqs.sendSqsMessageGenerateSegmentVideo,
+        {
+          message: {
+            imageUrl: segment.imageUrl,
+            segmentId: data.segmentId,
+            voiceUrl: data.voiceStatus.voiceUrl,
+            voiceDuration: data.voiceStatus.voiceDuration,
+            voiceSrt: data.voiceStatus.voiceSrt,
+          },
         },
-      },
-    );
+      );
     return new Response(null, {
       status: 200,
     });

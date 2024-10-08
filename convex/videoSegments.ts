@@ -18,7 +18,12 @@ export const segmentVideoGeneratedCallback = httpAction(
       segmentId: Id<"videoSegments">;
       videoStatus:
         | { status: "failed"; reason: string; elapsedMs: number }
-        | { status: "saved"; elapsedMs: number; videoUrl: string };
+        | {
+            status: "saved";
+            elapsedMs: number;
+            videoUrl: string;
+            publicId: string;
+          };
     };
     const segment = await ctx.runQuery(api.videoSegments.get, {
       id: segmentId,
@@ -93,6 +98,7 @@ export const editVoiceStatus = internalMutation({
         voiceUrl: v.string(),
         voiceSrt: v.string(),
         elapsedMs: v.number(),
+        publicId: v.string(),
       }),
     ),
   },
@@ -119,6 +125,7 @@ export const editVideoStatus = internalMutation({
         status: v.literal("saved"),
         videoUrl: v.string(),
         elapsedMs: v.number(),
+        publicId: v.string(),
       }),
     ),
   },
@@ -151,12 +158,13 @@ export const getByVideoId = query({
         userId: userId,
         videoId: args.videoId,
       })
-    )
-      return await ctx.db
+    ) {
+      const rs = await ctx.db
         .query("videoSegments")
         .filter((q) => q.eq(q.field("videoId"), args.videoId))
         .collect();
-    else return null;
+      return rs.sort((a, b) => a.order - b.order);
+    } else return null;
   },
 });
 export const internalGetByVideoId = internalQuery({
@@ -187,7 +195,11 @@ export const checkCanProcessFinalVideo = internalAction({
       );
       const orderedSegment = segments.sort((a, b) => a.order - b.order);
       const segmentUrls = orderedSegment.map((s) => {
-        if (s.videoStatus.status === "saved") return s.videoStatus.videoUrl;
+        if (
+          s.videoStatus.status === "saved" ||
+          s.videoStatus.status === "cached"
+        )
+          return s.videoStatus.videoUrl;
         else throw new ConvexError("Segment video is not generated");
       });
       await ctx.runAction(internal.sqs.sendSqsMessageGenerateFinalVideo, {
