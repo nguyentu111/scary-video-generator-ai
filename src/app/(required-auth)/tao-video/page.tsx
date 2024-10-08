@@ -1,32 +1,9 @@
 "use client";
-<<<<<<< HEAD
-import React from "react";
-import { useForm } from "react-hook-form";
-import { Button } from "@/components/ui/button"; // Import Shadcn UI components
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "~/convex/_generated/api";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AuthLoader } from "@/components/shared/auth-loader";
-=======
 import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
 import { useMutation } from "convex/react";
 import Link from "next/link";
->>>>>>> dev
 import { useRouter } from "next/navigation";
-import React from "react";
 import { api } from "~/convex/_generated/api";
 
 const CreateYourStory = () => {

@@ -19,19 +19,19 @@ import { Popover } from "@radix-ui/react-popover";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
   CheckIcon,
-  XCircle,
   DownloadIcon,
   EllipsisVertical,
   ImageIcon,
   Loader,
   LoaderIcon,
-  TrashIcon,
   PlusIcon,
+  TrashIcon,
+  XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
@@ -60,7 +60,7 @@ export default function Page({
                 Tiếp tục chỉnh sửa
               </Link>
             ) : (
-              <CreateVideoButton storyId={storyId} name={story?.name!} />
+              <CreateVideoButton storyId={storyId} name={story.name} />
             )}
           </div>
         </>
@@ -155,8 +155,8 @@ function SegmentItem({
     document.body.removeChild(link);
   };
   const mutateAddSegment = useMutation(api.storySegments.insert);
-  const handleAddSegment = () => {
-    mutateAddSegment({
+  const handleAddSegment = async () => {
+    await mutateAddSegment({
       imagePrompt: "",
       storyId: segment.storyId,
       text: "",
@@ -219,10 +219,10 @@ function SegmentItem({
                 Sửa prompt hình ảnh
               </div>
               <div
-                onClick={() => {
+                onClick={async () => {
                   if (!isDeletingSegment) {
                     setIsDeletingSegment(true);
-                    mutateDeleteSegment({ id: segment._id });
+                    await mutateDeleteSegment({ id: segment._id });
                   }
                 }}
                 className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 px-4 py-2 text-sm text-rose-500 dark:bg-gray-900"
@@ -346,7 +346,6 @@ function CreateVideoButton({
   const mutate = useMutation(api.videos.create);
   const router = useRouter();
   const handleCreate = async () => {
-    const videoId = await mutate({ storyId, name });
     router.push("/video-cua-toi");
   };
   return (

@@ -3,7 +3,6 @@ import { useModal } from "@/components/providers/modal-provider";
 import CustomModal from "@/components/shared/custom-modal";
 import { Loader } from "@/components/shared/loader";
 import { Button } from "@/components/ui/button";
-import { DialogClose } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -11,7 +10,6 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
@@ -20,10 +18,11 @@ import { useMutation, useQuery } from "convex/react";
 import { Loader2Icon, WandSparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "~/convex/_generated/api";
 import { Id } from "~/convex/_generated/dataModel";
+import { RefineContentForm } from "./_components/refine-form";
+import { useForm } from "react-hook-form";
 
 const schema = z.object({
   content: z
@@ -32,9 +31,6 @@ const schema = z.object({
     .max(10000, "Câu chuyện không vượt quá 10000 kí tự"),
 });
 
-const refineStorySchema = z.object({
-  prompt: z.string().min(10, "Ít nhất 10 kí tự"),
-});
 const FixStory = ({
   params,
 }: {
@@ -153,63 +149,4 @@ const FixStory = ({
     </div>
   );
 };
-
 export default FixStory;
-
-export const RefineContentForm = ({ storyId }: { storyId: Id<"stories"> }) => {
-  const { setClose } = useModal();
-  const form = useForm({
-    resolver: zodResolver(refineStorySchema),
-    defaultValues: { prompt: "" },
-  });
-  const mutateUpdate = useMutation(api.stories.editAiStory);
-  const onSubmit = async (data: z.infer<typeof refineStorySchema>) => {
-    await mutateUpdate({ prompt: data.prompt, id: storyId });
-    setClose();
-  };
-  return (
-    <Form {...form}>
-      {/** @ts-ignore */}
-      <form onSubmit={form.handleSubmit(onSubmit)} className={cn("space-y-4")}>
-        <FormField
-          control={form.control}
-          name="prompt"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  {...field}
-                  className="rounded-none border-2 border-purple-100 bg-gray-800 font-sans text-purple-100 focus-visible:ring-0"
-                  required
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="float-right flex gap-4">
-          <DialogClose>
-            <Button
-              type="button"
-              className="w-fit rounded-none bg-primary text-xl font-bold"
-              disabled={form.formState.isSubmitting}
-            >
-              <span>Hủy</span>
-            </Button>
-          </DialogClose>
-          <Button
-            type="submit"
-            className="w-fit rounded-none bg-purple-700 text-xl font-bold text-white hover:bg-purple-800"
-            disabled={form.formState.isSubmitting}
-          >
-            {form.formState.isSubmitting ? (
-              <Loader2Icon className="h-4 w-4 animate-spin" />
-            ) : (
-              <span>Chỉnh sửa</span>
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
-  );
-};

@@ -33,7 +33,7 @@ export default function Page({
         </div>
       )}
       <div className="grid grid-cols-1 gap-8 py-12 md:grid-cols-2">
-        {stories?.map((s, i) => <StoryItem story={s} />)}
+        {stories?.map((s, i) => <StoryItem key={s._id} story={s} />)}
       </div>
     </div>
   );

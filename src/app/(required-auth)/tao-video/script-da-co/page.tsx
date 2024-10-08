@@ -1,9 +1,6 @@
 "use client";
-import React from "react";
-import { useForm } from "react-hook-form";
+import { AuthLoader } from "@/components/shared/auth-loader";
 import { Button } from "@/components/ui/button"; // Import Shadcn UI components
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -12,17 +9,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "~/convex/_generated/api";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AuthLoader } from "@/components/shared/auth-loader";
-import { useRouter } from "next/navigation";
-import { Loader2Icon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { amatic } from "@/styles/fonts";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "convex/react";
+import { Loader2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { api } from "~/convex/_generated/api";
 
 const schema = z.object({
   name: z.string().min(1),

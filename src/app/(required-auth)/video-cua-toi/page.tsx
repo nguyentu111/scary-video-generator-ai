@@ -4,41 +4,22 @@ import { YoutubeIcon } from "@/components/icons/youtubeIcon";
 import { useModal } from "@/components/providers/modal-provider";
 import { AuthLoader } from "@/components/shared/auth-loader";
 import CustomModal from "@/components/shared/custom-modal";
-import { Button, ButtonProps } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { EllipsisVertical, Loader2Icon, PlusIcon } from "lucide-react";
+import { EllipsisVertical, PlusIcon } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 import { api } from "~/convex/_generated/api";
-import { Doc, Id } from "~/convex/_generated/dataModel";
+import type { Doc } from "~/convex/_generated/dataModel";
+import { UploadToYoutubeForm } from "./_components/upload-youtube-form";
 
 export default function Home() {
   const videos = useQuery(api.videos.getCurrentUserVideos);
@@ -51,12 +32,12 @@ export default function Home() {
           Video của tôi
         </h1>
         <div className="float-right max-w-full">
-          {channels && channels.length && channels?.length > 0 ? (
+          {channels?.length && channels?.length > 0 ? (
             <div>
               Đã kết nối channel :{" "}
               <div className="flex flex-col gap-2">
                 {channels.map((c) => (
-                  <ChannelItem channel={c} />
+                  <ChannelItem key={c._id} channel={c} />
                 ))}
               </div>
             </div>
@@ -114,6 +95,7 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
                 <div className="ml-auto flex gap-2">
                   <Button onClick={() => setClose()}>Hủy</Button>
                   <Button
+                    disabled={isDeleting}
                     variant={"secondary"}
                     onClick={handleDelete}
                     className="bg-purple-500 text-white hover:bg-purple-600"
@@ -149,7 +131,7 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
         (s) =>
           s.videoStatus.status === "saved" || s.videoStatus.status === "cached",
       ).length ?? 0;
-    const voiceStatus = videoSegments.reduce((acc, curr, i) => {
+    const voiceStatus = videoSegments.reduce((acc, curr) => {
       return (acc +=
         "Voice " +
         curr.order +
@@ -296,8 +278,8 @@ function ConnectYoutubeButton({
     } catch (error) {
       console.error("Failed to get YouTube auth URL:", error);
       toast.error(
-        ("Failed to connect to YouTube. Please try again." +
-          (error as unknown as Error)?.message) as string,
+        "Failed to connect to YouTube. Please try again." +
+          (error as Error)?.message,
       );
     } finally {
       setIsConnecting(false);
@@ -309,117 +291,3 @@ function ConnectYoutubeButton({
     </Button>
   );
 }
-const uploadFormShema = z.object({
-  name: z.string().min(20, "Tên ít nhất 20 kí tự"),
-  channel: z.string().min(1, "Hãy chọn channel"),
-  description: z.string().min(20, "Mô tả video ít nhất 20 kí tự"),
-});
-export const UploadToYoutubeForm = ({ video }: { video: Doc<"videos"> }) => {
-  const channels = useQuery(api.channels.getUserChannels);
-  const mutateUpload = useAction(api.youtube.uploadToYoutube);
-  const [isPostingToYoutube, setIsPostingToYoutube] = useState(false);
-  const form = useForm({
-    defaultValues: {
-      name: video.name,
-      channel: "",
-      description: "Video được tạo bởi AI",
-    },
-    resolver: zodResolver(uploadFormShema),
-  });
-  const onSubmit = async (data: z.infer<typeof uploadFormShema>) => {
-    try {
-      setIsPostingToYoutube(true);
-      const response = await mutateUpload({
-        videoId: video._id,
-        channelId: data.channel as Id<"channels">,
-        name: data.name,
-        description: data.description,
-      });
-      console.log(response);
-      toast.success("Video scheduled for YouTube.");
-    } catch (error) {
-      toast.error((error as { message: string }).message);
-    } finally {
-      setIsPostingToYoutube(false);
-    }
-  };
-  return (
-    <Form {...form}>
-      {/** @ts-ignore */}
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-4 font-sans"
-      >
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tên video</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="Nhập tên câu chuyện" required />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Mô tả của video</FormLabel>
-              <FormControl>
-                <Textarea
-                  {...field}
-                  placeholder="Nhập mô tả của video"
-                  className="min-h-[100px]"
-                  required
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="channel"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="">Chọn channel</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Channel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {channels?.map((c) => (
-                      <SelectItem key={c._id} value={c._id}>
-                        {c.channelTitle}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button
-          type="submit"
-          className={cn("w-full bg-purple-700 text-white hover:bg-purple-800")}
-          disabled={form.formState.isSubmitting}
-        >
-          {form.formState.isSubmitting ? (
-            <Loader2Icon className="h-4 w-4 animate-spin" />
-          ) : (
-            <span>Đăng </span>
-          )}
-        </Button>
-      </form>
-    </Form>
-  );
-};
