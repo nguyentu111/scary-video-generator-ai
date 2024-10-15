@@ -519,8 +519,8 @@ function StoryMenus({
                 </div>
                 <div className="mt-4">
                   <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(
                         segments.reduce(
                           (curr, acc) => (curr += acc.text + "\n"),
                           "",
