@@ -9,34 +9,36 @@ import {
 } from "@/components/ui/dialog";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
-import { amatic } from "@/styles/fonts";
 
 type Props = {
   title: string;
   subheading: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
+  contentClass?: string;
 };
 
-const CustomModal = ({ children, defaultOpen, subheading, title }: Props) => {
+const CustomModal = ({
+  children,
+  defaultOpen,
+  subheading,
+  title,
+  contentClass,
+}: Props) => {
   const { isOpen, setClose } = useModal();
   return (
     <Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
       <DialogContent
         className={cn(
-          "h-screen overflow-auto border-2 border-purple-500 bg-card dark:bg-gray-800 md:h-fit md:max-h-[700px]",
+          contentClass,
+          "!max-h-[80vh] overflow-auto !rounded-none border border-purple-500 bg-card dark:bg-gray-800",
         )}
       >
         <DialogHeader className="text-left">
-          <DialogTitle
-            className={cn(
-              "text-4xl font-bold text-purple-400",
-              amatic.className,
-            )}
-          >
+          <DialogTitle className={cn("font-amatic text-4xl font-bold")}>
             {title}
           </DialogTitle>
-          <DialogDescription className="text-xl text-purple-400">
+          <DialogDescription className={cn("font-special text-md")}>
             {subheading}
           </DialogDescription>
         </DialogHeader>

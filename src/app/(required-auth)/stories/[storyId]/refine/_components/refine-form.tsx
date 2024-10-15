@@ -10,6 +10,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { useMutation } from "convex/react";
@@ -38,11 +39,13 @@ export const RefineContentForm = ({ storyId }: { storyId: Id<"stories"> }) => {
           name="prompt"
           render={({ field }) => (
             <FormItem>
+              <FormLabel></FormLabel>
               <FormControl>
                 <Input
                   {...field}
                   className="rounded-none border-2 border-purple-100 bg-gray-800 font-sans text-purple-100 focus-visible:ring-0"
                   required
+                  placeholder="Enter refinement instruction"
                 />
               </FormControl>
               <FormMessage />
@@ -53,21 +56,21 @@ export const RefineContentForm = ({ storyId }: { storyId: Id<"stories"> }) => {
           <Button
             onClick={setClose}
             type="button"
-            className="w-fit rounded-none bg-primary text-xl font-bold"
+            className="w-fit rounded-none bg-primary font-bold"
             disabled={form.formState.isSubmitting}
           >
-            <span>Hủy</span>
+            <span>Cancle</span>
           </Button>
 
           <Button
             type="submit"
-            className="w-fit rounded-none bg-purple-700 text-xl font-bold text-white hover:bg-purple-800"
+            className="w-fit rounded-none bg-purple-700 font-bold text-white hover:bg-purple-800"
             disabled={form.formState.isSubmitting}
           >
             {form.formState.isSubmitting ? (
               <Loader2Icon className="h-4 w-4 animate-spin" />
             ) : (
-              <span>Chỉnh sửa</span>
+              <span>Refine</span>
             )}
           </Button>
         </div>

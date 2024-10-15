@@ -20,21 +20,38 @@ export const edit = mutation({
     id: v.id("storySegments"),
     imagePrompt: v.optional(v.string()),
     text: v.optional(v.string()),
+    imageStatus: v.optional(
+      v.union(
+        v.object({
+          status: v.literal("pending"),
+          details: v.string(),
+        }),
+        v.object({
+          status: v.literal("failed"),
+          reason: v.string(),
+          elapsedMs: v.number(),
+        }),
+        v.object({
+          status: v.literal("saved"),
+          imageUrl: v.string(),
+          publicId: v.string(),
+          elapsedMs: v.number(),
+        }),
+      ),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (userId === null) throw new ConvexError("Unauthenticated");
-    const segment = await ctx.runQuery(api.storySegments.get, {
-      id: args.id,
-    });
+    const segment = await ctx.db.get(args.id);
     if (!segment) throw new ConvexError("Segment not found");
     const story = await ctx.runQuery(api.stories.get, { id: segment.storyId });
     if (!story || story.userId !== userId)
       throw new ConvexError("Segment not found");
-
     await ctx.db.patch(args.id, {
-      text: args.text,
-      imagePrompt: args.imagePrompt,
+      text: args.text ? args.text : segment.text,
+      imagePrompt: args.imagePrompt ? args.imagePrompt : segment.imagePrompt,
+      imageStatus: args.imageStatus ? args.imageStatus : segment.imageStatus,
     });
     if (segment.text !== args.text) {
       await ctx.scheduler.runAfter(
@@ -43,6 +60,43 @@ export const edit = mutation({
         { storyId: story._id },
       );
     }
+  },
+});
+export const internalEdit = internalMutation({
+  args: {
+    id: v.id("storySegments"),
+    text: v.optional(v.string()),
+    imagePrompt: v.optional(v.string()),
+    order: v.optional(v.number()),
+    imageStatus: v.optional(
+      v.union(
+        v.object({
+          status: v.literal("pending"),
+          details: v.string(),
+        }),
+        v.object({
+          status: v.literal("failed"),
+          reason: v.string(),
+          elapsedMs: v.number(),
+        }),
+        v.object({
+          status: v.literal("saved"),
+          imageUrl: v.string(),
+          publicId: v.string(),
+          elapsedMs: v.number(),
+        }),
+      ),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const segment = await ctx.db.get(args.id);
+    if (!segment) throw new ConvexError("Segment not found");
+    await ctx.db.patch(args.id, {
+      text: args.text ? args.text : segment.text,
+      imagePrompt: args.imagePrompt ? args.imagePrompt : segment.imagePrompt,
+      order: args.order ? args.order : segment.order,
+      imageStatus: args.imageStatus ? args.imageStatus : segment.imageStatus,
+    });
   },
 });
 export const editImageStatus = internalMutation({
@@ -135,7 +189,7 @@ export const insert = mutation({
     });
   },
 });
-export const inrternalInsert = internalMutation({
+export const internalInsert = internalMutation({
   args: {
     imagePrompt: v.string(),
     text: v.string(),
@@ -143,7 +197,7 @@ export const inrternalInsert = internalMutation({
     order: v.number(),
   },
   handler: async (ctx, args) => {
-    ctx.db.insert("storySegments", {
+    return ctx.db.insert("storySegments", {
       imagePrompt: args.imagePrompt,
       text: args.text,
       storyId: args.storyId,
@@ -153,6 +207,34 @@ export const inrternalInsert = internalMutation({
         details: "Creating image...",
       },
     });
+  },
+});
+export const internalBulkInsert = internalMutation({
+  args: {
+    segments: v.array(
+      v.object({
+        imagePrompt: v.string(),
+        text: v.string(),
+        order: v.number(),
+        storyId: v.id("stories"),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    return await Promise.all(
+      args.segments.map((s, i) =>
+        ctx.db.insert("storySegments", {
+          imagePrompt: s.imagePrompt,
+          text: s.text,
+          storyId: s.storyId,
+          order: s.order,
+          imageStatus: {
+            status: "pending",
+            details: "Creating image...",
+          },
+        }),
+      ),
+    );
   },
 });
 export const saveSegments = internalMutation({

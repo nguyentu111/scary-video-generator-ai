@@ -1,8 +1,14 @@
 import { ConvexError, v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { action, httpAction, internalAction } from "./_generated/server";
+import {
+  action,
+  httpAction,
+  internalAction,
+  mutation,
+} from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import md5 from "md5";
 
 export const sendImagePost = httpAction(async (ctx, request) => {
   // Step 1: Store the file
@@ -94,7 +100,7 @@ export const sendImageOptions = httpAction(async (ctx, request) => {
 //     }
 //   }
 // });
-export const regenerateImage = action({
+export const regenerateImage = mutation({
   args: { segmentId: v.id("storySegments"), prompt: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -106,37 +112,66 @@ export const regenerateImage = action({
     const story = await ctx.runQuery(api.stories.get, { id: segment.storyId });
     if (!story || story.userId !== userId)
       throw new ConvexError("Segment not found");
-    await ctx.runMutation(internal.storySegments.editImageStatus, {
-      id: args.segmentId,
+
+    await ctx.runMutation(api.storySegments.edit, {
+      imagePrompt: args.prompt,
+      text: segment.text,
+      id: segment._id,
       imageStatus: {
         status: "pending",
         details: "Creating image...",
       },
     });
-    await ctx.runMutation(api.storySegments.edit, {
-      imagePrompt: args.prompt,
-      text: segment.text,
-      id: segment._id,
-    });
-    await ctx.scheduler.runAfter(0, internal.replicate.generateImage, {
+    await ctx.scheduler.runAfter(0, internal.images.regenerateImageJob, {
       prompt: args.prompt,
       segmentId: args.segmentId,
       storyId: story._id,
+      format: story.format,
     });
 
-    // await ctx.runAction(internal.sqs.sendSqsMessageGenerateImage, {
-    //   message: args.prompt,
-    //   attributes: {
-    //     segmentId: {
-    //       DataType: "String",
-    //       StringValue: args.segmentId.toString(),
-    //     },
-    //     folder: {
-    //       DataType: "String",
-    //       StringValue: "images/story_" + segment.storyId,
-    //     },
-    //   },
-    // });
     return "ok";
+  },
+});
+export const regenerateImageJob = internalAction({
+  args: {
+    prompt: v.string(),
+    segmentId: v.id("storySegments"),
+    storyId: v.id("stories"),
+    format: v.union(v.literal("16:9"), v.literal("9:16")),
+  },
+  handler: async (ctx, { format, prompt, segmentId, storyId }) => {
+    const time = Date.now();
+    try {
+      const imageUrl = await ctx.runAction(internal.replicate.generateImage, {
+        format,
+        prompt,
+      });
+      const savedRes = await ctx.runAction(
+        internal.cloudinary.uploadImageFromUrl,
+        {
+          folder: `scary_video/${process.env.NODE_ENV}/images/story_` + storyId,
+          imageUrl,
+          filename: md5(prompt),
+        },
+      );
+      await ctx.runMutation(internal.storySegments.internalEdit, {
+        id: segmentId,
+        imageStatus: {
+          status: "saved",
+          elapsedMs: Date.now() - time,
+          imageUrl: savedRes.secure_url,
+          publicId: savedRes.public_id,
+        },
+      });
+    } catch (error) {
+      await ctx.runMutation(internal.storySegments.internalEdit, {
+        id: segmentId,
+        imageStatus: {
+          status: "failed",
+          elapsedMs: Date.now() - time,
+          reason: (error as Error).message,
+        },
+      });
+    }
   },
 });

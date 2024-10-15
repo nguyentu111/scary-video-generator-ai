@@ -1,3 +1,4 @@
+import { amatic, jolly, nosifer, special } from "@/styles/fonts";
 import type { Config } from "tailwindcss";
 const config = {
   darkMode: ["class"],
@@ -18,8 +19,10 @@ const config = {
     },
     extend: {
       fontFamily: {
-        creepster: ["Creepster", "cursive"], // Add the font
-        amatic: ["Amatic SC", "system-ui"],
+        amatic: "var(--font-amatic)",
+        special: "var(--font-special)",
+        jolly: "var(--font-jolly)",
+        nosifer: "var(--font-nosifer)",
       },
       colors: {
         border: "hsl(var(--border))",

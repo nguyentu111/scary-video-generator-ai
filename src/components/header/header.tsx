@@ -1,6 +1,5 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +13,6 @@ import { useQuery } from "convex/react";
 import {
   BookOpenText,
   FilmIcon,
-  LayoutDashboard,
   Loader2Icon,
   LogOut,
   VideoIcon,
@@ -25,15 +23,13 @@ import { Suspense } from "react";
 import { api } from "~/convex/_generated/api";
 import { AuthLoader } from "../shared/auth-loader";
 import { MenuButton } from "./menu-button";
-import { ModeToggle } from "./mode-toggle";
 import { cn } from "@/lib/utils";
-import { amatic } from "@/styles/fonts";
 
 export function Header() {
   const user = useQuery(api.users.viewer);
   const { signIn } = useAuthActions();
   return (
-    <div className="select-none border-b py-4">
+    <div className="select-none border-b py-2">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2 text-xl">
@@ -46,33 +42,30 @@ export function Header() {
             {user && (
               <>
                 <Link
-                  href={"/tao-video"}
+                  href={"/generate"}
                   className={cn(
-                    amatic.className,
-                    "flex items-center gap-2 !text-[24px] !font-bold",
+                    "hidden items-center gap-2 font-amatic !text-[24px] !font-bold md:flex",
                   )}
                 >
-                  <VideoIcon className="h-6 w-6" /> Tạo video
+                  <VideoIcon className="h-6 w-6" /> Generate
                 </Link>
 
                 <Link
                   className={cn(
-                    amatic.className,
-                    "flex items-center gap-2 !text-[24px] !font-bold",
+                    "hidden items-center gap-2 font-amatic !text-[24px] !font-bold md:flex",
                   )}
-                  href={"/cau-chuyen"}
+                  href={"/stories"}
                 >
-                  <BookOpenText className="h-6 w-6" /> Câu chuyện của tôi
+                  <BookOpenText className="h-6 w-6" /> Stories
                 </Link>
 
                 <Link
                   className={cn(
-                    amatic.className,
-                    "flex items-center gap-2 !text-[24px] !font-bold",
+                    "hidden items-center gap-2 font-amatic !text-[24px] !font-bold md:flex",
                   )}
-                  href={"/video-cua-toi"}
+                  href={"/videos"}
                 >
-                  <FilmIcon className="h-6 w-6" /> Video của tôi
+                  <FilmIcon className="h-6 w-6" /> Videos
                 </Link>
               </>
             )}
@@ -80,11 +73,11 @@ export function Header() {
         </div>
 
         <div className="flex items-center justify-between gap-5">
+          {/* <ModeToggle /> */}
           <AuthLoader
             authLoading={<Loader2Icon className="animate-spin" />}
             unauthenticated={
               <>
-                <ModeToggle />
                 <button
                   className="flex items-center justify-between rounded-md border border-black px-4 py-2"
                   onClick={() => signIn("google")}
@@ -117,11 +110,13 @@ function ProfileAvatar() {
 }
 
 function HeaderActions() {
+  const user = useQuery(api.users.viewer);
+
   return (
     <>
-      <div className="hidden md:block">
-        <ModeToggle />
-      </div>
+      {user?.credits && (
+        <div className={"font-special"}>{user.credits + " Credits"}</div>
+      )}
       <ProfileDropdown />
       <div className="md:hidden">
         <MenuButton />

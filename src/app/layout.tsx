@@ -3,25 +3,17 @@ import "@/styles/globals.css";
 import { type Metadata } from "next";
 
 import type { ReactNode } from "react";
-import { Archivo, Libre_Franklin } from "next/font/google";
+import { amatic, jolly, nosifer, special } from "@/styles/fonts";
 import { Providers } from "../components/providers/global-providers";
 import NextTopLoader from "nextjs-toploader";
 import { cn } from "@/lib/utils";
 import { Header } from "../components/header/header";
-import { Toaster } from "@/components/ui/sonner";
-const archivo = Archivo({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-archivo",
-});
-const libre_franklin = Libre_Franklin({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-libre_franklin",
-});
+import { Footer } from "@/components/shared/footer";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "Tạo video kinh dị với AI",
+  title: "Scary video generator AI",
   icons: [
     { rel: "icon", type: "image/png", sizes: "48x48", url: "/favicon.ico" },
   ],
@@ -30,7 +22,8 @@ export const metadata: Metadata = {
     "Scary story generator",
     "Scary video ai",
   ],
-  description: "Tạo video kinh dị với AI",
+  description:
+    "Experience the power of AI-generated scary stories with captivating visuals, haunting voiceovers, and engaging captions - perfect for YouTube, TikTok, and beyond!",
 };
 
 export default async function RootLayout({
@@ -43,17 +36,23 @@ export default async function RootLayout({
       <body
         className={cn(
           "min-h-screen bg-background antialiased",
-          archivo.variable + " " + libre_franklin.variable,
+          amatic.variable,
+          jolly.variable,
+          nosifer.variable,
+          special.variable,
         )}
       >
         <Providers>
           <NextTopLoader />
-          <div className="flex h-screen w-screen flex-col overflow-hidden">
-            <Header />
-            <div className="h-full w-full flex-1 overflow-auto">
-              <main className="container h-full">{children}</main>
+          <TooltipProvider>
+            <div className="flex h-screen w-screen flex-col overflow-hidden">
+              <Header />
+              <div className="h-full w-full flex-1 overflow-auto">
+                <main className="min-h-[calc(100vh-100px)]">{children}</main>
+                <Footer />
+              </div>
             </div>
-          </div>
+          </TooltipProvider>
         </Providers>
         <Toaster />
       </body>

@@ -37,6 +37,8 @@ const config = {
     "@typescript-eslint/no-empty-object-type": "off",
     "@typescript-eslint/pref": "off",
     "@typescript-eslint/prefer-nullish-coalescing": "off",
+    "@typescript-eslint/prefer-optional-chain": "off",
+    "react/no-unescaped-entities": "off",
     // "@typescript-eslint/no-misused-promises": [
     //   "error",
     //   {

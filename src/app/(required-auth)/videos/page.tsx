@@ -21,45 +21,75 @@ import { api } from "~/convex/_generated/api";
 import type { Doc } from "~/convex/_generated/dataModel";
 import { UploadToYoutubeForm } from "./_components/upload-youtube-form";
 
-export default function Home() {
+export default function MyVideos() {
   const videos = useQuery(api.videos.getCurrentUserVideos);
   const channels = useQuery(api.channels.getUserChannels);
 
   return (
     <AuthLoader authLoading={<AuthLoadingSkeleton />}>
-      <div>
-        <h1 className="w-full text-center text-[40px] font-bold">
-          Video của tôi
+      <div className="container h-full py-12">
+        <h1
+          className={cn(
+            "font-nosifer w-full text-center text-[40px] font-bold text-purple-300",
+          )}
+        >
+          Your Videos
         </h1>
-        <div className="float-right max-w-full">
-          {channels?.length && channels?.length > 0 ? (
-            <div>
-              Đã kết nối channel :{" "}
-              <div className="flex flex-col gap-2">
-                {channels.map((c) => (
-                  <ChannelItem key={c._id} channel={c} />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <ConnectYoutubeButton variant={"link"}>
-              {({ isConnecting }) => (
+        <p className={cn("font-special w-full py-4 text-center text-lg")}>
+          Here are the videos you've generated.
+        </p>
+        {videos?.length !== undefined && videos?.length > 0 && (
+          <div>
+            <div className="float-right max-w-full">
+              {channels?.length && channels?.length > 0 ? (
                 <div>
-                  {isConnecting ? (
-                    "Đang lấy link kết nối"
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <PlusIcon className="h-4 w-4" /> Kết nối với youtube
+                  Connected channels :{" "}
+                  <div className="flex flex-col gap-2">
+                    {channels.map((c) => (
+                      <ChannelItem key={c._id} channel={c} />
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <ConnectYoutubeButton variant={"link"}>
+                  {({ isConnecting }) => (
+                    <div>
+                      {isConnecting ? (
+                        "Đang lấy link kết nối"
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <PlusIcon className="h-4 w-4" /> Connect youtube
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+                </ConnectYoutubeButton>
               )}
-            </ConnectYoutubeButton>
-          )}
-        </div>
-        <div className="grid w-full grid-cols-1 gap-4 py-12 md:grid-cols-2 lg:grid-cols-3">
-          {videos?.map((v) => <VideoItem video={v} key={v._id} />)}
-        </div>
+            </div>
+            <div className="grid w-full grid-cols-1 gap-4 py-12 md:grid-cols-2 lg:grid-cols-3">
+              {videos?.map((v) => <VideoItem video={v} key={v._id} />)}
+            </div>
+          </div>
+        )}
+        {videos !== undefined && videos.length === 0 && (
+          <p
+            className={cn(
+              "my-12 text-center font-amatic text-[40px] font-bold",
+            )}
+          >
+            You don't have any video.
+          </p>
+        )}
+        {videos == undefined && (
+          <div>
+            <div className="w-full p-12"></div>
+            <div className="flex h-full w-full items-center justify-center text-center">
+              <div className={cn("font-amatic text-[40px] font-bold")}>
+                Loading videos ...
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AuthLoader>
   );
@@ -73,7 +103,7 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
     setisDeleting(true);
     try {
       await mutateDelete({ id: channel._id });
-      toast.success("Đã xóa channel thành công");
+      toast.success("Delete channel successfully");
       setClose();
     } catch (error) {
       console.log(error);
@@ -87,10 +117,10 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
         variant={"link"}
         onClick={() =>
           setOpen(
-            <CustomModal title="Xóa channel" subheading="">
+            <CustomModal title="Delete channel" subheading="">
               <div className="flex flex-col gap-2">
                 <div className="">
-                  Bạn có chắc chắn muốn xóa liên kết với channel này không?
+                  Bạn có chắc chắn muốn Delete liên kết với channel này không?
                 </div>
                 <div className="ml-auto flex gap-2">
                   <Button onClick={() => setClose()}>Hủy</Button>
@@ -100,7 +130,7 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
                     onClick={handleDelete}
                     className="bg-purple-500 text-white hover:bg-purple-600"
                   >
-                    Xóa
+                    Delete
                   </Button>
                 </div>
               </div>
@@ -108,7 +138,7 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
           )
         }
       >
-        Xóa
+        Delete
       </Button>
     </div>
   );

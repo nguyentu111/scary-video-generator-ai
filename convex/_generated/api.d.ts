@@ -19,6 +19,7 @@ import type * as auth from "../auth.js";
 import type * as channels from "../channels.js";
 import type * as chatgpt from "../chatgpt.js";
 import type * as cloudinary from "../cloudinary.js";
+import type * as credits from "../credits.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
 import type * as logs from "../logs.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   channels: typeof channels;
   chatgpt: typeof chatgpt;
   cloudinary: typeof cloudinary;
+  credits: typeof credits;
   http: typeof http;
   images: typeof images;
   logs: typeof logs;

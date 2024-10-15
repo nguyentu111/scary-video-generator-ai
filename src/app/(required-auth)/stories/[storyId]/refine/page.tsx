@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { amatic } from "@/styles/fonts";
+import { amatic, nosifer } from "@/styles/fonts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
 import { Loader2Icon, WandSparkles } from "lucide-react";
@@ -52,7 +52,7 @@ const FixStory = ({
     await mutateUpdateRefine({
       id: story!._id,
     });
-    router.push(`/cau-chuyen/${story!._id}`);
+    router.push(`/stories/${story!._id}`);
   };
 
   const { setOpen } = useModal();
@@ -66,16 +66,20 @@ const FixStory = ({
       </div>
     );
   return (
-    <div className="mt-8 flex flex-col items-center justify-center pb-8 text-white">
-      <h1 className={cn("mb-4 text-5xl font-bold", amatic.className)}>
-        Chỉnh sửa lại kịch bản
+    <div className="flex flex-col items-center justify-center py-12 text-white">
+      <h1
+        className={cn(
+          "w-full text-center text-[40px] font-bold text-purple-300",
+          nosifer.className,
+        )}
+      >
+        Refine story
       </h1>
 
-      <div className="w-full max-w-[1000px] rounded-lg border-2 border-purple-500 bg-gray-800 p-8">
+      <div className="mt-8 w-full max-w-[1000px] rounded-lg border-2 border-purple-500 bg-gray-800 p-8">
         <h2
           className={cn(
-            "mb-4 w-full text-center text-4xl font-bold text-purple-500",
-            amatic.className,
+            "mb-4 w-full text-center font-amatic text-4xl font-bold text-purple-500",
           )}
         >
           {story?.name}
@@ -101,15 +105,15 @@ const FixStory = ({
                 )}
               />
               <span className="my-2 block text-sm text-purple-100">
-                {form.watch("content").length} / 10000 kí tự
+                {form.watch("content").length} / 10000 characters
               </span>
               <div className="md:grid md:grid-cols-2 md:gap-8">
                 <Button
                   onClick={() =>
                     setOpen(
                       <CustomModal
-                        title="Chỉnh sửa nội dung"
-                        subheading="Nhập hướng dẫn chỉnh sửa cho AI"
+                        title="Refine story"
+                        subheading="Enter your refinement instructions. This will cost 1 credit."
                       >
                         <RefineContentForm storyId={story._id} />
                       </CustomModal>,
@@ -119,8 +123,7 @@ const FixStory = ({
                   className="w-full rounded-none bg-purple-700 text-white hover:bg-purple-800"
                   disabled={form.formState.isSubmitting}
                 >
-                  <WandSparkles className="mr-4 h-4 w-4" /> Chỉnh sửa lại bằng
-                  AI
+                  <WandSparkles className="mr-4 h-4 w-4" /> Refine with AI
                 </Button>
                 <Button
                   type="submit"
@@ -130,7 +133,7 @@ const FixStory = ({
                   {form.formState.isSubmitting ? (
                     <Loader2Icon className="h-4 w-4 animate-spin" />
                   ) : (
-                    <span>Tạo các đoạn</span>
+                    <span>Generate segment and images</span>
                   )}
                 </Button>
               </div>

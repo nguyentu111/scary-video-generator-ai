@@ -1,4 +1,5 @@
 "use client";
+import { useToast } from "@/components/hooks/use-toast";
 import { useModal } from "@/components/providers/modal-provider";
 import CustomModal from "@/components/shared/custom-modal";
 import { Button } from "@/components/ui/button";
@@ -13,25 +14,36 @@ import {
 import { Input } from "@/components/ui/input";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { amatic } from "@/styles/fonts";
+import { amatic, special } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
 import { useAction, useMutation, useQuery } from "convex/react";
 import {
+  BookIcon,
+  BookOpenIcon,
   CheckIcon,
+  CopyIcon,
   DownloadIcon,
   EllipsisVertical,
   ImageIcon,
   Loader,
   LoaderIcon,
+  PlusCircleIcon,
   PlusIcon,
   TrashIcon,
+  VideoIcon,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { notFound, redirect, useRouter } from "next/navigation";
+import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
@@ -44,34 +56,83 @@ export default function Page({
 }) {
   const segments = useQuery(api.storySegments.getByStoryId, { storyId });
   const story = useQuery(api.stories.get, { id: storyId });
-
+  const doneRefine = useMemo(
+    () =>
+      story?.AIGenerateInfo ? story?.AIGenerateInfo?.finishedRefine : true,
+    [story?.AIGenerateInfo?.finishedRefine],
+  );
+  const { setOpen } = useModal();
+  if (story === null) return notFound();
   return (
-    <div className="h-full py-12">
+    <div className="container h-full py-12">
       {story && segments?.length !== undefined && (
         <>
-          <StoryTitle defaultName={story?.name} storyId={story?._id} />
+          <div className="flex flex-col items-center justify-between md:flex-row">
+            <StoryTitle defaultName={story?.name} storyId={story?._id} />
+            <Button
+              className={cn(special.className)}
+              onClick={() =>
+                setOpen(
+                  <CustomModal
+                    title="Edit story context"
+                    subheading="Modify the overall context of your story"
+                  >
+                    <EditStoryContextForm
+                      context={
+                        story.context
+                          ? (story.context as { data?: string }).data
+                          : ""
+                      }
+                    />
+                  </CustomModal>,
+                )
+              }
+            >
+              Edit story context
+            </Button>
+          </div>
           <div className="justify-between gap-8 md:grid md:grid-cols-2">
             {segments?.map((s, i) => (
-              <SegmentItem segment={s} index={i + 1} key={s._id} />
+              <SegmentItem
+                segment={s}
+                index={i + 1}
+                key={s._id}
+                canDelete={segments.length !== 1}
+              />
             ))}
-            {story.AIGenerateInfo &&
-            story.AIGenerateInfo.finishedRefine === false ? (
-              <Link href={`/cau-chuyen/${story._id}/chinh-sua`}>
-                Tiếp tục chỉnh sửa
+            {!doneRefine ? (
+              <Link
+                href={`/stories/${story._id}/refine`}
+                className="block text-center md:col-span-2"
+              >
+                <div className="flex h-full items-center justify-center">
+                  <div className={cn("font-amatic text-[40px] font-bold")}>
+                    Continue Refine
+                  </div>
+                </div>
               </Link>
             ) : (
-              <CreateVideoButton storyId={storyId} name={story.name} />
+              segments?.length >= 1 && (
+                <div className="col-span-2">
+                  <StoryMenus
+                    storyId={storyId}
+                    name={story.name}
+                    segments={segments}
+                  />
+                </div>
+              )
             )}
           </div>
         </>
       )}
-      {segments?.length === 0 && story?.createType === "full-scripted" && (
-        <div className="flex h-full items-center justify-center">
-          <div className={cn(amatic.className, "text-[40px] font-bold")}>
-            Đang phân tích, chờ chút
+      {segments === undefined ||
+        (segments.length === 0 && (
+          <div className="flex h-full items-center justify-center">
+            <div className={cn("font-amatic text-[40px] font-bold")}>
+              Loading segments ...
+            </div>
           </div>
-        </div>
-      )}
+        ))}
     </div>
   );
 }
@@ -103,7 +164,7 @@ function StoryTitle({
     <>
       {!isEditingName ? (
         <h1
-          className="min-w-6 p-4 text-[40px]"
+          className={cn(special.className, "min-w-6 p-4 text-[40px]")}
           onClick={() => setIsEdittingName(true)}
         >
           {name}
@@ -131,9 +192,11 @@ function StoryTitle({
 function SegmentItem({
   segment,
   index,
+  canDelete,
 }: {
   segment: Doc<"storySegments">;
   index: number;
+  canDelete: boolean;
 }) {
   const mutateSaveText = useMutation(api.storySegments.edit);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -168,16 +231,18 @@ function SegmentItem({
   return (
     <div
       key={segment._id}
-      className="relative rounded-xl border border-purple-500"
+      className="relative flex flex-col rounded-xl border border-purple-500"
     >
       <div
         onClick={() => handleAddSegment()}
-        className="absolute right-0 top-1/2 translate-x-1/2 cursor-pointer rounded-full border-2 border-purple-500 bg-white p-1 dark:bg-black"
+        className="absolute -right-0 top-1/2 z-50 -translate-y-1/2 translate-x-1/2 transform"
       >
-        <PlusIcon className="h-4 w-4" />
+        <Button className="h-8 w-8 rounded-full bg-purple-600/50 !p-0">
+          <PlusCircleIcon className="h-6" />
+        </Button>
       </div>
-      <div className="flex justify-between border-b border-purple-500 px-4 py-2">
-        <span>Đoạn {index}</span>
+      <div className="flex justify-between rounded-t-xl border-b border-purple-500 bg-gray-800 px-4 py-2">
+        <span>Segment {index}</span>
         <Popover>
           <PopoverTrigger>
             <EllipsisVertical />
@@ -193,22 +258,26 @@ function SegmentItem({
                     handleDownload(
                       //@ts-ignore
                       segment.imageStatus.imageUrl,
-                      `doan_${index + 1}.png}`,
+                      `Segment_${index + 1}.png}`,
                     )
                   }
                   className="flex cursor-pointer items-center gap-2 rounded-t-lg border-b border-purple-500 px-4 py-2 text-sm dark:bg-gray-900 dark:hover:bg-black"
                 >
                   <DownloadIcon className="h-4 w-4" />
-                  Tải ảnh
+                  Download image
                 </div>
               ) : null}
               <div
                 onClick={() =>
                   setOpen(
-                    <CustomModal title="Sửa ảnh" subheading="">
+                    <CustomModal
+                      title="Change prompt"
+                      subheading="Modify the prompt used for generating your segment image."
+                    >
                       <ImagePromtChangeForm
                         prompt={segment.imagePrompt}
                         segmentId={segment._id}
+                        submitText="Regenerate"
                       />
                     </CustomModal>,
                   )
@@ -216,9 +285,10 @@ function SegmentItem({
                 className="flex cursor-pointer items-center gap-2 border-b border-purple-500 px-4 py-2 text-sm dark:bg-gray-900 dark:hover:bg-black"
               >
                 <ImageIcon className="h-4 w-4" />
-                Sửa prompt hình ảnh
+                Change image prompt
               </div>
-              <div
+              <Button
+                disabled={!canDelete}
                 onClick={async () => {
                   if (!isDeletingSegment) {
                     setIsDeletingSegment(true);
@@ -228,39 +298,62 @@ function SegmentItem({
                 className="flex cursor-pointer items-center gap-2 rounded-b-lg border-b border-purple-500 px-4 py-2 text-sm text-rose-500 dark:bg-gray-900"
               >
                 <TrashIcon className="h-4 w-4" />
-                {isDeletingSegment ? "Đang xóa..." : "Xóa đoạn này"}
-              </div>
+                {isDeletingSegment ? "Deleting..." : "Delete this segment"}
+              </Button>
             </div>
           </PopoverContent>
         </Popover>
       </div>
-      <div className="aspect-video">
+      <div className="aspect-video bg-gray-900">
         {segment.imageStatus.status === "saved" ? (
           <Image
             src={segment.imageStatus.imageUrl}
             height={300}
             width={533}
-            className="h-full w-full"
+            className="h-full w-full object-contain"
             alt={segment.imagePrompt}
           />
         ) : segment.imageStatus.status === "pending" && segment.imagePrompt ? (
           <div className="flex h-full w-full items-center justify-center gap-2">
-            <span>Ảnh đang tạo </span>
+            <span>Generating image </span>
             <LoaderIcon className="h-5 w-5 animate-spin" />
           </div>
         ) : !segment.imagePrompt ? (
-          <div className="flex h-full w-full items-center justify-center">
-            <span>Hãy tạo prompt cho ảnh</span>
+          <div
+            className={cn(
+              special.className,
+              "flex h-full w-full items-center justify-center gap-4",
+            )}
+          >
+            <Button disabled={segment.text.length < 10}>Auto generate</Button>
+            <Button
+              onClick={() =>
+                setOpen(
+                  <CustomModal
+                    title="Generate with your prompt"
+                    subheading="Modify the prompt used for generating your segment image."
+                  >
+                    <ImagePromtChangeForm
+                      prompt={segment.imagePrompt}
+                      segmentId={segment._id}
+                      submitText="Generate"
+                    />
+                  </CustomModal>,
+                )
+              }
+            >
+              Generate with prompt
+            </Button>
           </div>
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <span>Ảnh lỗi </span>
+            <span>Error generating image </span>
           </div>
         )}
       </div>
       <div
         className={cn(
-          "min-h-[100px] w-full border-t border-t-purple-500 px-4 py-2 text-sm",
+          "min-h-[100px] w-full flex-1 rounded-b-xl border-t border-t-purple-500 bg-gray-900 px-4 py-2 text-sm",
         )}
         contentEditable
         ref={ref}
@@ -275,22 +368,24 @@ function SegmentItem({
 const ImagePromtChangeForm = ({
   prompt,
   segmentId,
+  submitText,
 }: {
   prompt: string;
   segmentId: Id<"storySegments">;
+  submitText: string;
 }) => {
   const { setClose } = useModal();
-  const action = useAction(api.images.regenerateImage);
+  const mutateRegenerate = useMutation(api.images.regenerateImage);
   const form = useForm({
     defaultValues: { prompt },
   });
   const onSubmit = async (data: { prompt: string }) => {
     try {
-      await action({
+      await mutateRegenerate({
         segmentId,
         prompt: data.prompt,
       });
-      toast.success("Đang tạo lại ảnh...");
+      toast.success("Generating image...");
     } catch (error) {
       if (error instanceof Error) {
         console.log(error);
@@ -313,7 +408,7 @@ const ImagePromtChangeForm = ({
           name="prompt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Prompt tạo ảnh</FormLabel>
+              <FormLabel>Prompt</FormLabel>
               <FormControl>
                 <Textarea {...field} className="min-h-[150px]" required />
               </FormControl>
@@ -325,11 +420,12 @@ const ImagePromtChangeForm = ({
         <Button
           type="submit"
           disabled={form.formState.isLoading || form.formState.isSubmitting}
+          className={cn(special.className)}
         >
           {form.formState.isLoading || form.formState.isSubmitting ? (
             <Loader className="h-4 w-4 animate-spin" />
           ) : (
-            "Tạo lại ảnh"
+            submitText
           )}
         </Button>
       </form>
@@ -347,11 +443,110 @@ function CreateVideoButton({
   const mutateCreate = useMutation(api.videos.create);
   const handleCreate = async () => {
     await mutateCreate({ storyId, name });
-    router.push("/video-cua-toi");
+    router.push("/videos");
   };
   return (
-    <Button className="col-span-2 w-full bg-purple-500" onClick={handleCreate}>
-      Tạo video
+    <Button className="bg-purple-500" onClick={handleCreate}>
+      <VideoIcon className="mr-2 h-4 w-4" />
+      Generate video
     </Button>
+  );
+}
+function EditStoryContextForm({ context }: { context: string | undefined }) {
+  const form = useForm({
+    defaultValues: {
+      context: context ?? "",
+    },
+  });
+  return (
+    <Form {...form}>
+      <form>
+        <FormField
+          name="context"
+          control={form.control}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Context</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  placeholder="Your story time of day, location, etc.  This will be included while generating the images.  Character descriptions, etc.  Too much detail and your images will be too similar."
+                  className="h-full min-h-[250px] w-full"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className={cn("mt-4 w-full", special.className)}>
+          Update Context
+        </Button>
+      </form>
+    </Form>
+  );
+}
+function StoryMenus({
+  name,
+  storyId,
+  segments,
+}: {
+  name: string;
+  segments: Doc<"storySegments">[];
+  storyId: Id<"stories">;
+}) {
+  const { setClose, setOpen } = useModal();
+  const { toast } = useToast();
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center gap-4 rounded-2xl border border-gray-600 bg-gray-900 p-8",
+        special.className,
+      )}
+    >
+      <Button
+        onClick={() => {
+          setOpen(
+            <CustomModal
+              title={name}
+              subheading=""
+              contentClass="w-[95vw] max-w-[1000px] "
+            >
+              <div className="">
+                <div className="max-h-[55vh] overflow-auto">
+                  {segments.map((s) => (
+                    <p key={s._id}>{s.text}</p>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        segments.reduce(
+                          (curr, acc) => (curr += acc.text + "\n"),
+                          "",
+                        ),
+                      );
+                      toast({
+                        title: "Copied to clipboard.",
+                        description:
+                          "The full story has been copied to your clipboard.",
+                        variant: "default",
+                      });
+                    }}
+                  >
+                    <CopyIcon className="mr-2 h-4 w-4" />
+                    Copy to clipboard
+                  </Button>
+                </div>
+              </div>
+            </CustomModal>,
+          );
+        }}
+      >
+        <BookOpenIcon className="mr-2 h-4 w-4" />
+        Read full story
+      </Button>
+      <CreateVideoButton name={name} storyId={storyId} />
+    </div>
   );
 }

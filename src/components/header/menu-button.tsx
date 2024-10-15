@@ -18,26 +18,26 @@ export function MenuButton() {
       <DropdownMenuContent className="space-y-2">
         <DropdownMenuItem asChild>
           <Link
-            href="/tao-video"
+            href="/generate"
             className="flex cursor-pointer items-center gap-2"
           >
-            <VideoIcon className="h-4 w-4" /> Tạo video
+            <VideoIcon className="h-4 w-4" /> Generate
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link
-            href="/cau-chuyen"
+            href="/stories"
             className="flex cursor-pointer items-center gap-2"
           >
-            <BookOpenText className="h-4 w-4" /> Câu chuyện
+            <BookOpenText className="h-4 w-4" /> Stories
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link
-            href="/video-cua-toi"
+            href="/videos"
             className="flex cursor-pointer items-center gap-2"
           >
-            <FilmIcon className="h-4 w-4" /> Video của tôi
+            <FilmIcon className="h-4 w-4" /> My videos
           </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
