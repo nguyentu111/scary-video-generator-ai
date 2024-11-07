@@ -436,6 +436,13 @@ export const generateImagePromptJob = internalAction({
     const time = Date.now();
 
     try {
+      await ctx.runMutation(internal.storySegments.editImageStatus, {
+        id: segmentId,
+        imageStatus: {
+          status: "pending",
+          details: "Generating image prompt...",
+        },
+      });
       // Generate image prompt
       const imagePrompt = await ctx.runAction(
         internal.chatgpt.generateImagePrompt,
