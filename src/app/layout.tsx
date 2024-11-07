@@ -3,7 +3,7 @@ import "@/styles/globals.css";
 import { type Metadata } from "next";
 
 import type { ReactNode } from "react";
-import { amatic, jolly, nosifer, special } from "@/styles/fonts";
+
 import { Providers } from "../components/providers/global-providers";
 import NextTopLoader from "nextjs-toploader";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,40 @@ import { Header } from "../components/header/header";
 import { Footer } from "@/components/shared/footer";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  Amatic_SC,
+  Special_Elite,
+  Jolly_Lodger,
+  Nosifer,
+} from "next/font/google";
+export const amatic = Amatic_SC({
+  weight: ["400", "700"],
+  display: "swap",
+  preload: true,
+  subsets: ["vietnamese"],
+  variable: "--font-amatic",
+});
+export const special = Special_Elite({
+  weight: ["400"],
+  display: "swap",
+  preload: true,
+  subsets: ["latin"],
+  variable: "--font-special",
+});
+export const jolly = Jolly_Lodger({
+  weight: ["400"],
+  display: "swap",
+  preload: true,
+  subsets: ["latin"],
+  variable: "--font-jolly",
+});
+export const nosifer = Nosifer({
+  weight: ["400"],
+  display: "swap",
+  preload: true,
+  subsets: ["latin"],
+  variable: "--font-nosifer",
+});
 
 export const metadata: Metadata = {
   title: "Scary video generator AI",

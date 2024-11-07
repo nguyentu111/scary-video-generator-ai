@@ -77,7 +77,7 @@ http.route({
     });
     return new Response(null, {
       status: 302,
-      headers: { Location: `${process.env.SITE_URL}/video-cua-toi` },
+      headers: { Location: `${process.env.SITE_URL}/videos` },
     });
   }),
 });

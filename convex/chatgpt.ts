@@ -20,90 +20,105 @@ const chatGptResStoryGenerateSchema = z.object({
   story: z.string(),
 });
 
-export const splitToSegment = internalAction({
-  args: { story: v.string(), storyId: v.id("stories") },
-  handler: async (ctx, args) => {
-    await ctx.runMutation(internal.logs.create, {
-      message: "running split to segment",
-      function: "splitToSegment",
-    });
+// export const splitToSegment = internalAction({
+//   args: {
+//     story: v.string(),
+//     storyId: v.id("stories"),
+//     format: v.optional(v.union(v.literal("16:9"), v.literal("9:16"))),
+//   },
+//   handler: async (ctx, args) => {
+//     await ctx.runMutation(internal.logs.create, {
+//       message: "running split to segment",
+//       function: "splitToSegment",
+//     });
 
-    const systemPromt: ChatCompletionMessageParam = {
-      role: "system",
-      content: `You are an AI that creates horror videos based on the story provided by the user. Your task is to analyze the story, divide it into smaller segments, and create image prompts for each segment to assist an API in generating realistic images.
-        Requirements:
-        Analyze the story: Read the story input by the user and split it into smaller segments, each with a length of 4 to 8 sentences.
-        Create image prompts: Based on the content of each segment, generate a detailed image description (image prompt). This description should reflect the context, emotions, and atmosphere of that segment while being aligned with the horror theme.
-        Format: For each segment, use the following format:
-        Segment: [Content of the segment, keep the language of the user input's].
-        Image prompt: [Detailed description for the image, including elements such as color, lighting, setting, emotions, and key objects in the scene.
-        If there is people in the story, make sure to decribe to keep people's gender , age and appearance consistent over segment's image prompts.
-        Ensure that the image prompts can be easily translated into real images, focusing on creating the creepy and tense atmosphere of the story.
-        Keep image prompt in english.]
-        Carefully ensure that no part of the story is omitted.
-        Return the response as a Json array.       
-        
-        `,
-    };
-    try {
-      const completion = await openai.beta.chat.completions.parse({
-        model: "gpt-4o-2024-08-06",
-        messages: [
-          systemPromt,
-          {
-            role: "user",
-            content: args.story,
-          },
-        ],
-        response_format: zodResponseFormat(
-          chatGptResSplitToSegmentSchema,
-          "segments",
-        ),
-      });
-      const segmentArray = completion.choices[0]?.message.parsed?.segments;
-      await ctx.runMutation(internal.logs.create, {
-        message: JSON.stringify(segmentArray),
-        function: "splitToSegment",
-      });
-      if (segmentArray) {
-        const segmentIds = await ctx.runMutation(
-          internal.storySegments.saveSegments,
-          {
-            segments: segmentArray,
-            storyId: args.storyId,
-          },
-        );
-        //TODO :generate image for each segment prompt
-        await Promise.all(
-          segmentArray.map((s, i) =>
-            ctx.scheduler.runAfter(0, internal.replicate.generateImage, {
-              prompt: s.image,
-              format: "16:9",
-            }),
-          ),
-        );
-        // await ctx.scheduler.runAfter(30, internal.storySegments.timeout, { submissionId });
-      } else {
-        await ctx.runMutation(internal.logs.create, {
-          message: "Fail to get segments array from chatgpt",
-          function: "splitToSegment.error",
-        });
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        await ctx.runMutation(internal.logs.create, {
-          message: error.message,
-          function: "splitToSegment.error",
-        });
-      } else {
-        await ctx.runMutation(internal.logs.create, {
-          message: "Unkown error occur :<<",
-          function: "splitToSegment.error",
-        });
-      }
-    }
-  },
-});
+//     const systemPromt: ChatCompletionMessageParam = {
+//       role: "system",
+//       content: `You are an AI that creates horror videos based on the story provided by the user. Your task is to analyze the story, divide it into smaller segments, and create image prompts for each segment to assist an API in generating realistic images.
+//         Requirements:
+//         Analyze the story: Read the story input by the user and split it into smaller segments, each with a length of 4 to 8 sentences.
+//         Create image prompts: Based on the content of each segment, generate a detailed image description (image prompt). This description should reflect the context, emotions, and atmosphere of that segment while being aligned with the horror theme.
+//         Format: For each segment, use the following format:
+//         Segment: [Content of the segment, keep the language of the user input's].
+//         Image prompt: [Detailed description for the image, including elements such as color, lighting, setting, emotions, and key objects in the scene.
+//         If there is people in the story, make sure to decribe to keep people's gender , age and appearance consistent over segment's image prompts.
+//         Ensure that the image prompts can be easily translated into real images, focusing on creating the creepy and tense atmosphere of the story.
+//         Keep image prompt in english.]
+//         Carefully ensure that no part of the story is omitted.
+//         Return the response as a Json array.
+
+//         `,
+//     };
+//     try {
+//       const completion = await openai.beta.chat.completions.parse({
+//         model: "gpt-4o-2024-08-06",
+//         messages: [
+//           systemPromt,
+//           {
+//             role: "user",
+//             content: args.story,
+//           },
+//         ],
+//         response_format: zodResponseFormat(
+//           chatGptResSplitToSegmentSchema,
+//           "segments",
+//         ),
+//       });
+//       const segmentArray = completion.choices[0]?.message.parsed?.segments;
+//       await ctx.runMutation(internal.logs.create, {
+//         message: JSON.stringify(segmentArray),
+//         function: "splitToSegment",
+//       });
+//       if (segmentArray) {
+//         const segmentIds = await ctx.runMutation(
+//           internal.storySegments.saveSegments,
+//           {
+//             segments: segmentArray,
+//             storyId: args.storyId,
+//           },
+//         );
+//         //TODO :generate image for each segment prompt
+//         await Promise.all(
+//           segmentIds.map((s, i) =>
+//             ctx.scheduler.runAfter(
+//               0,
+//               internal.replicate.generateImagesAndSave,
+//               {
+//                 data: [
+//                   {
+//                     prompt: segmentArray[i]?.image ?? "",
+//                     format: args.format ?? "16:9",
+//                     segmentId: s,
+//                   },
+//                 ],
+//               },
+//             ),
+//           ),
+//         );
+
+//         // await ctx.scheduler.runAfter(30, internal.storySegments.timeout, { submissionId });
+//       } else {
+//         await ctx.runMutation(internal.logs.create, {
+//           message: "Fail to get segments array from chatgpt",
+//           function: "splitToSegment.error",
+//         });
+//       }
+//     } catch (error) {
+//       if (error instanceof Error) {
+//         await ctx.runMutation(internal.logs.create, {
+//           message: error.message,
+//           function: "splitToSegment.error",
+//         });
+//       } else {
+//         await ctx.runMutation(internal.logs.create, {
+//           message: "Unkown error occur :<<",
+//           function: "splitToSegment.error",
+//         });
+//       }
+//     }
+//   },
+// });
+
 export const generateStory = internalAction({
   args: { prompt: v.string(), name: v.string(), storyId: v.id("stories") },
   handler: async (ctx, args) => {

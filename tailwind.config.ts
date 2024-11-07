@@ -1,4 +1,3 @@
-import { amatic, jolly, nosifer, special } from "@/styles/fonts";
 import type { Config } from "tailwindcss";
 const config = {
   darkMode: ["class"],

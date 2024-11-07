@@ -2,7 +2,6 @@
 import { Button } from "@/components/ui/button";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { amatic, nosifer, special } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
 import { useMutation, useQuery } from "convex/react";
 import {
@@ -32,8 +31,7 @@ export default function Page({
     <div className="container h-full py-12">
       <h1
         className={cn(
-          "w-full text-center text-[40px] font-bold text-purple-300",
-          nosifer.className,
+          "w-full text-center font-nosifer text-[40px] font-bold text-purple-300",
         )}
       >
         Your Stories
@@ -51,17 +49,16 @@ export default function Page({
           </Button>
         </div>
       ) : (
-        <p className={cn(special.className, "py-4 text-center text-lg")}>
+        <p className={cn("py-4 text-center font-special text-lg")}>
           Here are the stories you've generated.
         </p>
       )}
       <div className="grid grid-cols-1 gap-8 py-12 md:grid-cols-3">
         {stories?.map((s) => <StoryItem key={s._id} story={s} />)}
-        {stories !== undefined && (
+        {stories !== undefined && stories.length > 0 && (
           <Link
             href="/generate"
             className={cn(
-              special.className,
               "flex min-h-[400px] flex-col items-center justify-center gap-4 rounded-xl border-2 border-purple-500 text-purple-500 hover:border-purple-300",
             )}
           >
@@ -100,8 +97,7 @@ function StoryItem({ story }: { story: Doc<"stories"> }) {
     <div
       key={story._id}
       className={cn(
-        "flex flex-col overflow-hidden rounded-xl border-2 border-purple-500 hover:border-purple-300",
-        special.className,
+        "flex flex-col overflow-hidden rounded-xl border-2 border-purple-500 font-special hover:border-purple-300",
       )}
     >
       <div className="flex justify-between bg-gray-800 px-4 py-2">

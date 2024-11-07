@@ -11,13 +11,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { amatic, nosifer } from "@/styles/fonts";
+import { cn, splitStory } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "convex/react";
-import { Loader2Icon, WandSparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import {
+  Loader2Icon,
+  Monitor,
+  SmartphoneIcon,
+  WandSparkles,
+} from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { api } from "~/convex/_generated/api";
 import { Id } from "~/convex/_generated/dataModel";
@@ -39,23 +43,16 @@ const FixStory = ({
   const story = useQuery(api.stories.get, {
     id: params.storyId,
   });
-  const router = useRouter();
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       content: story?.content ?? "",
     },
   });
-  const mutateUpdateRefine = useMutation(api.stories.onDoneRefine);
-
-  const onSubmit = async (data: z.infer<typeof schema>) => {
-    await mutateUpdateRefine({
-      id: story!._id,
-    });
-    router.push(`/stories/${story!._id}`);
-  };
 
   const { setOpen } = useModal();
+  const segmentCount = splitStory(form.watch("content")).length;
+
   useEffect(() => {
     if (story?.content) form.setValue("content", story.content);
   }, [story?.content]);
@@ -69,8 +66,7 @@ const FixStory = ({
     <div className="flex flex-col items-center justify-center py-12 text-white">
       <h1
         className={cn(
-          "w-full text-center text-[40px] font-bold text-purple-300",
-          nosifer.className,
+          "w-full text-center font-nosifer text-[40px] font-bold text-purple-300",
         )}
       >
         Refine story
@@ -87,7 +83,7 @@ const FixStory = ({
         <div className="relative">
           <Form {...form}>
             {/** @ts-ignore */}
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit()} className="space-y-4">
               <FormField
                 control={form.control}
                 name="content"
@@ -120,14 +116,22 @@ const FixStory = ({
                     )
                   }
                   type="button"
-                  className="w-full rounded-none bg-purple-700 text-white hover:bg-purple-800"
+                  className="w-full rounded-none bg-purple-700 font-special text-white hover:bg-purple-800"
                   disabled={form.formState.isSubmitting}
                 >
                   <WandSparkles className="mr-4 h-4 w-4" /> Refine with AI
                 </Button>
                 <Button
-                  type="submit"
-                  className="w-full rounded-none bg-purple-700 text-white hover:bg-purple-800"
+                  type="button"
+                  onClick={() => {
+                    setOpen(
+                      <VideoFormatPopup
+                        credits={segmentCount * 10}
+                        content={form.watch("content")}
+                      />,
+                    );
+                  }}
+                  className="w-full rounded-none bg-purple-700 font-special text-white hover:bg-purple-800"
                   disabled={form.formState.isSubmitting}
                 >
                   {form.formState.isSubmitting ? (
@@ -142,8 +146,9 @@ const FixStory = ({
           {story?.AIGenerateInfo &&
             story.AIGenerateInfo.status.state === "pending" && (
               <div className="absolute inset-0 z-10 bg-black/30">
-                <div className="flex h-full w-full items-center justify-center">
+                <div className="flex h-full w-full flex-col items-center justify-center">
                   <Loader className="h-10 w-10" />
+                  <p className="text-purple-100">Please wait...</p>
                 </div>
               </div>
             )}
@@ -153,3 +158,94 @@ const FixStory = ({
   );
 };
 export default FixStory;
+
+const VideoFormatPopup = ({
+  credits,
+  content,
+}: {
+  credits: number;
+  content: string;
+}) => {
+  const params = useParams();
+  const [videoFormat, setVideoFormat] = useState<"16:9" | "9:16">("9:16");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setClose } = useModal();
+  const router = useRouter();
+  const mutateGenerate = useMutation(api.stories.onDoneRefine);
+  const handleGenerate = async () => {
+    setIsSubmitting(true);
+    await mutateGenerate({
+      id: params.storyId as Id<"stories">,
+      format: videoFormat,
+      content,
+    });
+    setIsSubmitting(false);
+    setClose();
+    router.push("/stories/" + params.storyId);
+  };
+  return (
+    <CustomModal
+      title="Choose Video Orientation"
+      subheading="Choose between vertical (TikTok/YouTube Shorts) or horizontal (standard 1080p) format."
+    >
+      <div className="font-special text-sm text-purple-100">
+        <p>
+          Vertical videos are ideal for platforms like TikTok and Instagram
+          Reels.
+        </p>
+        <p className="mt-1">
+          Horizontal videos are better suited for YouTube and traditional video
+          players.
+          <p className="mt-2 font-bold">
+            Note: Once set, the orientation cannot be changed without
+            regenerating all images, so choose carefully!
+          </p>
+        </p>
+        <div className="mt-4 flex gap-2">
+          <Button
+            type="button"
+            onClick={() => setVideoFormat("9:16")}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 font-special",
+              videoFormat === "9:16" ? "bg-primary" : "!bg-gray-600",
+            )}
+          >
+            <SmartphoneIcon className="h-4 w-4" /> Vertical
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setVideoFormat("16:9")}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 font-special",
+              videoFormat === "16:9" ? "bg-primary" : "!bg-gray-600",
+            )}
+          >
+            <Monitor className="h-4 w-4" /> Horizontal
+          </Button>
+        </div>
+        <div className="mt-8 flex justify-end gap-2">
+          <Button
+            type="button"
+            onClick={() => setClose()}
+            variant="outline"
+            className="font-special"
+          >
+            Cancle
+          </Button>
+          <Button
+            type="button"
+            onClick={handleGenerate}
+            className="font-special"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <>Generate ({credits} credits)</>
+            )}
+          </Button>
+        </div>
+      </div>
+    </CustomModal>
+  );
+};

@@ -9,15 +9,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { nosifer, special } from "@/styles/fonts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
-import { Loader2Icon, Monitor, SmartphoneIcon } from "lucide-react";
+import { Loader2Icon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "~/convex/_generated/api";
@@ -31,7 +28,6 @@ const schema = z.object({
 });
 
 const GuidedStoryCreation = () => {
-  const [videoFormat, setvideoFormat] = useState<"16:9" | "9:16">("16:9");
   const router = useRouter();
   const form = useForm({
     resolver: zodResolver(schema),
@@ -48,7 +44,6 @@ const GuidedStoryCreation = () => {
       name: data.title,
       prompt: data.description,
       story: "",
-      format: videoFormat,
     });
     router.push(`/stories/${storyId}/refine`);
   };
@@ -56,21 +51,17 @@ const GuidedStoryCreation = () => {
   return (
     <div className="container flex flex-col items-center justify-center py-12 pb-8 dark:bg-black dark:text-white">
       <h1
-        className={cn(
-          "mb-4 text-4xl font-bold text-purple-300",
-          nosifer.className,
-        )}
+        className={cn("mb-4 font-nosifer text-4xl font-bold text-purple-300")}
       >
         Guided Story Creation
       </h1>
-      <p className={cn("mb-8 text-lg text-gray-300", special.className)}>
+      <p className={cn("mb-8 font-special text-lg text-gray-300")}>
         Let AI guide you through creating your story
       </p>
 
       <div
         className={cn(
-          "w-full max-w-[800px] rounded-lg border-2 border-purple-500 bg-gray-100 p-8 dark:bg-gray-800",
-          special.className,
+          "w-full max-w-[800px] rounded-lg border-2 border-purple-500 bg-gray-100 p-8 font-special dark:bg-gray-800",
         )}
       >
         <Form {...form}>
@@ -116,35 +107,6 @@ const GuidedStoryCreation = () => {
                 </FormItem>
               )}
             />
-            <div className="space-y-2">
-              <Label>Video Format</Label>
-              <p className="text-sm text-gray-400">
-                Choose between vertical (TikTok/YouTube Shorts) or horizontal
-                (standard 1080p) format.
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  onClick={() => setvideoFormat("9:16")}
-                  className={cn(
-                    "flex w-full items-center justify-center gap-2",
-                    videoFormat === "9:16" ? "bg-primary" : "!bg-gray-600",
-                  )}
-                >
-                  <SmartphoneIcon className="h-4 w-4" /> Vertical
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setvideoFormat("16:9")}
-                  className={cn(
-                    "flex w-full items-center justify-center gap-2",
-                    videoFormat === "16:9" ? "bg-primary" : "!bg-gray-600",
-                  )}
-                >
-                  <Monitor className="h-4 w-4" /> Horizontal
-                </Button>
-              </div>
-            </div>
 
             <Button
               type="submit"
@@ -154,7 +116,7 @@ const GuidedStoryCreation = () => {
               {form.formState.isSubmitting ? (
                 <Loader2Icon className="h-4 w-4 animate-spin" />
               ) : (
-                <span>Generate guide Story </span>
+                <span>Generate guide Story (1 credit)</span>
               )}
             </Button>
           </form>

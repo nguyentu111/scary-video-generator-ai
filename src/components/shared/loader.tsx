@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
-import { LucideProps, SkullIcon } from "lucide-react";
+import { Loader2Icon, LucideProps } from "lucide-react";
 
 export const Loader = ({ className, ...props }: LucideProps) => {
   return (
-    <SkullIcon {...props} className={cn("h-4 w-4 animate-spin", className)} />
+    <Loader2Icon {...props} className={cn("h-4 w-4 animate-spin", className)} />
   );
 };

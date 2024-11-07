@@ -22,7 +22,10 @@ export const Hero = ({ children }: { children: React.ReactNode }) => {
     return () => context.revert();
   }, []); // Add an empty dependency array
   return (
-    <div ref={container} className="relative flex flex-col items-center py-24">
+    <div
+      ref={container}
+      className="relative flex flex-col items-center py-10 md:py-24"
+    >
       <Image
         src="/header-bg.jpg"
         alt="hero"

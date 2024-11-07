@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 import { cn, splitStory } from "@/lib/utils";
-import { nosifer, special } from "@/styles/fonts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "convex/react";
 import { ConvexError } from "convex/values";
@@ -24,7 +24,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { api } from "~/convex/_generated/api";
-import { useToast } from "@/components/hooks/use-toast";
 const schema = z.object({
   name: z.string().min(1),
   story: z.string().min(1, "The story should be at least 200 characters long."),
@@ -66,25 +65,20 @@ const Page = () => {
       <div className="container flex min-h-screen flex-col items-center justify-center py-12">
         <h1
           className={cn(
-            nosifer.className,
-            "mb-4 text-center font-amatic text-4xl font-[700] text-purple-300",
+            "mb-4 text-center font-nosifer text-4xl font-[700] text-purple-300",
           )}
         >
           Create Your Story
         </h1>
         <p
-          className={cn(
-            "mb-8 text-center text-lg text-gray-300",
-            special.className,
-          )}
+          className={cn("mb-8 text-center font-special text-lg text-gray-300")}
         >
           Transform your ideas into captivating visual narratives
         </p>
 
         <div
           className={cn(
-            "w-full max-w-[800px] rounded-lg border-2 border-purple-500 bg-gray-100 p-8 dark:bg-gray-800",
-            special.className,
+            "w-full max-w-[800px] rounded-lg border-2 border-purple-500 bg-gray-100 p-8 font-special dark:bg-gray-800",
           )}
         >
           <Form {...form}>

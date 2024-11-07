@@ -126,7 +126,7 @@ export const regenerateImage = mutation({
       prompt: args.prompt,
       segmentId: args.segmentId,
       storyId: story._id,
-      format: story.format,
+      format: story.format ?? "16:9",
     });
 
     return "ok";
@@ -173,5 +173,15 @@ export const regenerateImageJob = internalAction({
         },
       });
     }
+  },
+});
+export const generateStoryImages = internalAction({
+  args: { storyId: v.id("stories") },
+  handler: async (ctx, { storyId }) => {
+    const story = await ctx.runQuery(api.stories.get, { id: storyId });
+    if (!story) throw new ConvexError("Story not found");
+    const segments = await ctx.runQuery(api.storySegments.getByStoryId, {
+      storyId,
+    });
   },
 });

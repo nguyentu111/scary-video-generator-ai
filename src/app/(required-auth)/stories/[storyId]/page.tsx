@@ -1,5 +1,4 @@
 "use client";
-import { useToast } from "@/components/hooks/use-toast";
 import { useModal } from "@/components/providers/modal-provider";
 import CustomModal from "@/components/shared/custom-modal";
 import { Button } from "@/components/ui/button";
@@ -14,18 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useToast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
-import { amatic, special } from "@/styles/fonts";
 import { Popover } from "@radix-ui/react-popover";
-import { useAction, useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
-  BookIcon,
   BookOpenIcon,
   CheckIcon,
   CopyIcon,
@@ -34,18 +26,18 @@ import {
   ImageIcon,
   Loader,
   LoaderIcon,
+  Monitor,
   PlusCircleIcon,
-  PlusIcon,
+  Smartphone,
   TrashIcon,
   VideoIcon,
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, redirect, useRouter } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { useDebounceCallback } from "usehooks-ts";
 import { api } from "~/convex/_generated/api";
 import type { Doc, Id } from "~/convex/_generated/dataModel";
@@ -56,6 +48,7 @@ export default function Page({
 }) {
   const segments = useQuery(api.storySegments.getByStoryId, { storyId });
   const story = useQuery(api.stories.get, { id: storyId });
+  const format = story?.format;
   const doneRefine = useMemo(
     () =>
       story?.AIGenerateInfo ? story?.AIGenerateInfo?.finishedRefine : true,
@@ -68,9 +61,13 @@ export default function Page({
       {story && segments?.length !== undefined && (
         <>
           <div className="flex flex-col items-center justify-between md:flex-row">
-            <StoryTitle defaultName={story?.name} storyId={story?._id} />
+            <StoryTitle
+              defaultName={story?.name}
+              storyId={story?._id}
+              format={format ?? "16:9"}
+            />
             <Button
-              className={cn(special.className)}
+              className={"font-special"}
               onClick={() =>
                 setOpen(
                   <CustomModal
@@ -139,9 +136,11 @@ export default function Page({
 function StoryTitle({
   defaultName,
   storyId,
+  format,
 }: {
   defaultName: string;
   storyId: Id<"stories">;
+  format: "16:9" | "9:16";
 }) {
   const [name, setName] = useState(defaultName);
   const [isEditingName, setIsEdittingName] = useState(false);
@@ -164,10 +163,21 @@ function StoryTitle({
     <>
       {!isEditingName ? (
         <h1
-          className={cn(special.className, "min-w-6 p-4 text-[40px]")}
+          className={"min-w-6 p-4 font-special text-[40px]"}
           onClick={() => setIsEdittingName(true)}
         >
-          {name}
+          {name} {"  "}
+          {format === "16:9" ? (
+            <span className="inline-flex items-center rounded-full border bg-blue-700/50 px-2 py-1 text-xs font-semibold text-purple-200 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <Monitor className="mr-2 h-4 w-4" />
+              Horizontal
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full border bg-purple-700/50 px-2 py-1 text-xs font-semibold text-purple-200 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <Smartphone className="mr-2 h-4 w-4" />
+              Vertical
+            </span>
+          )}
         </h1>
       ) : (
         <div className="flex items-center gap-4">
@@ -310,7 +320,7 @@ function SegmentItem({
             src={segment.imageStatus.imageUrl}
             height={300}
             width={533}
-            className="h-full w-full object-contain"
+            className={cn("m-auto h-full max-h-[300px] w-full object-contain")}
             alt={segment.imagePrompt}
           />
         ) : segment.imageStatus.status === "pending" && segment.imagePrompt ? (
@@ -320,10 +330,9 @@ function SegmentItem({
           </div>
         ) : !segment.imagePrompt ? (
           <div
-            className={cn(
-              special.className,
-              "flex h-full w-full items-center justify-center gap-4",
-            )}
+            className={
+              "flex h-full w-full items-center justify-center gap-4 font-special"
+            }
           >
             <Button disabled={segment.text.length < 10}>Auto generate</Button>
             <Button
@@ -375,6 +384,7 @@ const ImagePromtChangeForm = ({
   submitText: string;
 }) => {
   const { setClose } = useModal();
+  const { toast } = useToast();
   const mutateRegenerate = useMutation(api.images.regenerateImage);
   const form = useForm({
     defaultValues: { prompt },
@@ -385,7 +395,9 @@ const ImagePromtChangeForm = ({
         segmentId,
         prompt: data.prompt,
       });
-      toast.success("Generating image...");
+      toast({
+        title: "Your image is generating...",
+      });
     } catch (error) {
       if (error instanceof Error) {
         console.log(error);
@@ -394,7 +406,11 @@ const ImagePromtChangeForm = ({
             "Uncaught Error: Field name $metadata starts with a '$', which is reserved.",
           )
         )
-          toast.error(error.message);
+          toast({
+            title: "Error",
+            description: error.message,
+            variant: "destructive",
+          });
       }
     }
     setClose();
@@ -420,7 +436,7 @@ const ImagePromtChangeForm = ({
         <Button
           type="submit"
           disabled={form.formState.isLoading || form.formState.isSubmitting}
-          className={cn(special.className)}
+          className={"font-special"}
         >
           {form.formState.isLoading || form.formState.isSubmitting ? (
             <Loader className="h-4 w-4 animate-spin" />
@@ -478,7 +494,7 @@ function EditStoryContextForm({ context }: { context: string | undefined }) {
             </FormItem>
           )}
         />
-        <Button type="submit" className={cn("mt-4 w-full", special.className)}>
+        <Button type="submit" className={"mt-4 w-full font-special"}>
           Update Context
         </Button>
       </form>
@@ -498,10 +514,9 @@ function StoryMenus({
   const { toast } = useToast();
   return (
     <div
-      className={cn(
-        "flex items-center justify-center gap-4 rounded-2xl border border-gray-600 bg-gray-900 p-8",
-        special.className,
-      )}
+      className={
+        "flex items-center justify-center gap-4 rounded-2xl border border-gray-600 bg-gray-900 p-8 font-special"
+      }
     >
       <Button
         onClick={() => {

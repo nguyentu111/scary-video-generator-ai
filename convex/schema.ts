@@ -41,7 +41,7 @@ const schema = defineSchema({
         ),
       }),
     ),
-    format: v.union(v.literal("16:9"), v.literal("9:16")),
+    format: v.optional(v.union(v.literal("16:9"), v.literal("9:16"))),
     context: v.optional(
       v.union(
         v.object({

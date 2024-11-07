@@ -17,58 +17,6 @@ const AWS_QUEUE_GENERATE_SEGMENT_VIDEO = process.env
   .AWS_QUEUE_GENERATE_SEGMENT_VIDEO as string;
 const AWS_QUEUE_GENERATE_FINAL_VIDEO = process.env
   .AWS_QUEUE_GENERATE_FINAL_VIDEO as string;
-const a: MessageAttributeValue = { DataType: "String", StringValue: "asd" };
-export const sendSqsMessageGenerateImage = internalAction({
-  args: {
-    attributes: v.object({
-      segmentId: v.object({
-        DataType: v.literal("String"),
-        StringValue: v.string(),
-      }),
-      folder: v.object({
-        DataType: v.literal("String"),
-        StringValue: v.string(),
-      }),
-    }),
-    message: v.string(),
-  },
-  handler: async (ctx, args) => {
-    try {
-      await ctx.runMutation(internal.logs.create, {
-        message: "sending to sqs generate image",
-        function: "sendSqsMessageGenerateImage",
-      });
-
-      const command = new SendMessageCommand({
-        QueueUrl: AWS_QUEUE_GENERATE_IMAGE,
-        DelaySeconds: 0,
-        MessageAttributes: {
-          ...args.attributes,
-          nodeEnv: {
-            DataType: "String",
-            StringValue: process.env.NODE_ENV,
-          },
-        },
-        MessageBody: "Realistic picture, " + args.message,
-      });
-
-      const response = await client.send(command);
-      return response;
-    } catch (error) {
-      if (error instanceof Error) {
-        await ctx.runMutation(internal.logs.create, {
-          message: error.message,
-          function: "sendSqsMessageGenerateImage.error",
-        });
-      } else {
-        await ctx.runMutation(internal.logs.create, {
-          message: "Unkown error occur :<<",
-          function: "sendSqsMessageGenerateImage.error",
-        });
-      }
-    }
-  },
-});
 export const sendSqsMessageGenerateVoice = internalAction({
   args: {
     attributes: v.object({

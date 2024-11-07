@@ -14,12 +14,14 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAction, useMutation, useQuery } from "convex/react";
-import { EllipsisVertical, PlusIcon } from "lucide-react";
+import { EllipsisVertical, Eye, PlusIcon, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api } from "~/convex/_generated/api";
 import type { Doc } from "~/convex/_generated/dataModel";
 import { UploadToYoutubeForm } from "./_components/upload-youtube-form";
+import { env, title } from "process";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function MyVideos() {
   const videos = useQuery(api.videos.getCurrentUserVideos);
@@ -30,12 +32,12 @@ export default function MyVideos() {
       <div className="container h-full py-12">
         <h1
           className={cn(
-            "font-nosifer w-full text-center text-[40px] font-bold text-purple-300",
+            "w-full text-center font-nosifer text-[40px] font-bold text-purple-300",
           )}
         >
           Your Videos
         </h1>
-        <p className={cn("font-special w-full py-4 text-center text-lg")}>
+        <p className={cn("w-full py-4 text-center font-special text-lg")}>
           Here are the videos you've generated.
         </p>
         {videos?.length !== undefined && videos?.length > 0 && (
@@ -55,7 +57,7 @@ export default function MyVideos() {
                   {({ isConnecting }) => (
                     <div>
                       {isConnecting ? (
-                        "Đang lấy link kết nối"
+                        "Getting connection link"
                       ) : (
                         <div className="flex items-center gap-2">
                           <PlusIcon className="h-4 w-4" /> Connect youtube
@@ -144,8 +146,10 @@ function ChannelItem({ channel }: { channel: Doc<"channels"> }) {
   );
 }
 function VideoItem({ video }: { video: Doc<"videos"> }) {
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
   const channels = useQuery(api.channels.getUserChannels);
-
+  const mutateDelete = useMutation(api.videos.deleteVideo);
   const videoSegments = useQuery(api.videoSegments.getByVideoId, {
     videoId: video._id,
   });
@@ -197,7 +201,16 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
         (videoGeneratedCount === videoSegments.length ? "Đang gộp video" : ""),
     };
   }, [videoSegments]);
-  const { setOpen } = useModal();
+  const { setOpen, setClose } = useModal();
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    await mutateDelete({ id: video._id });
+    toast({
+      title: "Success",
+      description: "Delete video successfully",
+    });
+    setClose();
+  };
   return (
     <div
       className="rounded-lg border-2 border-purple-500 shadow-purple-500 transition-all hover:shadow-lg"
@@ -209,21 +222,53 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
           <PopoverTrigger>
             <EllipsisVertical />
           </PopoverTrigger>
-          <PopoverContent className="z-10 w-fit rounded-lg border border-purple-500 bg-background !p-0">
+          <PopoverContent className="z-10 flex w-fit flex-col overflow-hidden rounded-lg border border-purple-500 bg-background !p-0">
+            {process.env.NODE_ENV === "development" && (
+              <Button
+                size={"sm"}
+                variant={"ghost"}
+                className="!py-0"
+                onClick={() => {
+                  setOpen(
+                    <CustomModal title="Video status" subheading="">
+                      <pre className="mb-2 whitespace-pre-wrap">
+                        {currentStatus?.message}
+                      </pre>
+                    </CustomModal>,
+                  );
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" /> Status
+              </Button>
+            )}
             <Button
-              variant={"ghost"}
-              className="!py-0"
+              variant={"destructive"}
+              size={"sm"}
+              className="!py-0 font-special"
               onClick={() => {
                 setOpen(
-                  <CustomModal title="Trạng thái video" subheading="">
-                    <pre className="mb-2 whitespace-pre-wrap">
-                      {currentStatus?.message}
-                    </pre>
+                  <CustomModal title="Delete video" subheading="">
+                    <div>
+                      Do you want to delete this video? This action can not be
+                      undone.
+                    </div>
+                    <div className="ml-auto mt-8 flex w-fit gap-2">
+                      <Button onClick={() => setClose()} variant={"outline"}>
+                        Cancle
+                      </Button>
+                      <Button
+                        variant={"destructive"}
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </Button>
+                    </div>
                   </CustomModal>,
                 );
               }}
             >
-              Theo dõi trạng thái
+              <Trash2 className="mr-2 h-4 w-4" /> Delete
             </Button>
           </PopoverContent>
         </Popover>
@@ -246,7 +291,7 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
                 }
                 onClick={() => {
                   setOpen(
-                    <CustomModal title="Đăng lên youtube" subheading="">
+                    <CustomModal title="Upload to youtube" subheading="">
                       <UploadToYoutubeForm video={video} />
                     </CustomModal>,
                   );
@@ -261,7 +306,7 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
                     : "",
                 )}
               >
-                <YoutubeIcon className="h-6 w-6" /> Đăng lên youtube
+                <YoutubeIcon className="h-6 w-6" /> Upload to youtube
               </Button>
             </div>
           </div>
@@ -273,7 +318,7 @@ function VideoItem({ video }: { video: Doc<"videos"> }) {
             />
           </div>
         ) : (
-          <div>Đã có lỗi xảy ra...</div>
+          <div>An error occurred...</div>
         )}
       </div>
     </div>
