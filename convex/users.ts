@@ -1,7 +1,5 @@
-import { ConvexError } from "convex/values";
-import { v } from "convex/values";
-import { internalMutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { query } from "./_generated/server";
 
 export const viewer = query({
   args: {},

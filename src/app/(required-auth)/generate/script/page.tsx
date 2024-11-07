@@ -53,6 +53,7 @@ const Page = () => {
       });
       router.push("/stories/" + id);
     } catch (error) {
+      console.log((error as ConvexError<string>).data);
       toast({
         title: "Uh oh!",
         description: (error as ConvexError<string>).data,

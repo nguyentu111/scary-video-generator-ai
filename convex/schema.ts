@@ -65,6 +65,9 @@ const schema = defineSchema({
     order: v.number(),
     imageStatus: v.union(
       v.object({
+        status: v.literal("idle"),
+      }),
+      v.object({
         status: v.literal("pending"),
         details: v.string(),
       }),

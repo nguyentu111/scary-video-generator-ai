@@ -278,11 +278,9 @@ export const generateContext = internalAction({
 });
 export const generateImagePrompt = internalAction({
   args: {
-    storyId: v.id("stories"),
     context: v.string(),
     story: v.string(),
     segment: v.string(),
-    order: v.number(),
   },
   handler: async (ctx, args) => {
     try {
@@ -337,13 +335,6 @@ export const generateImagePrompt = internalAction({
       await ctx.runMutation(internal.logs.create, {
         message: (error as Error).message,
         function: "generateImagePrompt.imagePrompts",
-      });
-      await ctx.runMutation(internal.stories.internalEdit, {
-        id: args.storyId,
-        context: {
-          state: "failed",
-          reason: (error as Error).message,
-        },
       });
     }
   },

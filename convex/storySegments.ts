@@ -203,8 +203,7 @@ export const internalInsert = internalMutation({
       storyId: args.storyId,
       order: args.order,
       imageStatus: {
-        status: "pending",
-        details: "Creating image...",
+        status: "idle",
       },
     });
   },
@@ -303,5 +302,60 @@ export const deleteSegment = mutation({
       internal.stories.concatStoryContentFromSegments,
       { storyId: segment.storyId },
     );
+  },
+});
+export const autoGenerateImage = mutation({
+  args: {
+    segmentId: v.id("storySegments"),
+  },
+  handler: async (ctx, { segmentId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Unauthenticated");
+
+    // Get the segment
+    const segment = await ctx.db.get(segmentId);
+    if (!segment) throw new ConvexError("Segment not found");
+
+    // Get the story to check ownership and get context
+    const story = await ctx.runQuery(api.stories.get, { id: segment.storyId });
+    if (!story || story.userId !== userId)
+      throw new ConvexError("Unauthorized");
+
+    // Update segment status to pending
+    await ctx.db.patch(segmentId, {
+      imageStatus: {
+        status: "pending",
+        details: "Generating image...",
+      },
+    });
+
+    // If no prompt exists, schedule prompt generation first
+    if (!segment.imagePrompt) {
+      const context =
+        story.context && story.context.state === "saved"
+          ? story.context.data
+          : "";
+
+      await ctx.scheduler.runAfter(0, internal.stories.generateImagePromptJob, {
+        segmentId,
+        context,
+        story: story.content,
+        segment: segment.text,
+        format: story.format ?? "16:9",
+        storyId: story._id,
+      });
+    } else {
+      // If prompt exists, just regenerate the image
+      await ctx.scheduler.runAfter(0, internal.stories.generateImagePromptJob, {
+        segmentId,
+        context: story.context?.state === "saved" ? story.context.data : "",
+        story: story.content,
+        segment: segment.text,
+        format: story.format ?? "16:9",
+        storyId: story._id,
+      });
+    }
+
+    return "ok";
   },
 });

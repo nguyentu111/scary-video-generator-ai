@@ -8,7 +8,7 @@ const CreateYourStory = () => {
     <div className="py-32">
       <h1
         className={cn(
-          "mb-4 text-center font-amatic font-nosifer text-4xl font-[700] text-purple-300",
+          "mb-4 text-center font-nosifer text-4xl font-[700] text-purple-300",
         )}
       >
         Create Your Story

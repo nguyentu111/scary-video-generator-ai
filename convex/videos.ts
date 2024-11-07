@@ -11,6 +11,8 @@ import { api, internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { filter } from "convex-helpers/server/filter";
+import { calculateVideoCredits } from "../src/lib/calculate-credits";
+
 export const get = query({
   args: { id: v.id("videos") },
   handler: async (ctx, args) => {
@@ -28,6 +30,7 @@ export const get = query({
     } else throw new ConvexError("Video not found");
   },
 });
+
 export const internalGet = internalQuery({
   args: { id: v.id("videos") },
   handler: async (ctx, args) => {
@@ -36,6 +39,7 @@ export const internalGet = internalQuery({
     return await ctx.db.get(args.id);
   },
 });
+
 export const isVideoBelongToUser = internalQuery({
   args: { videoId: v.id("videos"), userId: v.id("users") },
   handler: async (ctx, args) => {
@@ -45,163 +49,91 @@ export const isVideoBelongToUser = internalQuery({
     return story?.userId === args.userId;
   },
 });
+
 export const create = mutation({
   args: { storyId: v.id("stories"), name: v.string() },
   async handler(ctx, args) {
     const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Unauthorized");
+
+    // Get story and user data
     const story = await ctx.runQuery(api.stories.get, { id: args.storyId });
+    const user = await ctx.db.get(userId);
+
+    if (!story || !user) throw new ConvexError("Story or user not found");
     if (story?.userId !== userId) throw new ConvexError("Story not found");
+
+    // Calculate required credits
+    const segments = await ctx.db
+      .query("storySegments")
+      .filter((q) => q.eq(q.field("storyId"), story._id))
+      .collect();
+
+    const storyText = segments.reduce(
+      (acc, segment) => acc + segment.text + " ",
+      "",
+    );
+    const requiredCredits = calculateVideoCredits(
+      storyText,
+      segments.length,
+    ).totalCredits;
+
+    // Check if user has enough credits
+    if (user.credits < requiredCredits) {
+      throw new ConvexError(
+        `Not enough credits. Required: ${requiredCredits}, Available: ${user.credits}`,
+      );
+    }
+
+    // Deduct credits
+    await ctx.runMutation(internal.credits.updateCredit, {
+      reduceCredit: requiredCredits,
+      userId,
+    });
+
+    // Create video
     const videoId = await ctx.db.insert("videos", {
       storyId: args.storyId,
       name: args.name,
       result: { status: "pending", details: "Creating video ..." },
     });
+
     // clone all story segment to video segment
     const storySegment = await ctx.db
       .query("storySegments")
       .filter((q) => q.eq(q.field("storyId"), story._id))
       .collect();
     if (storySegment.some((s) => s.imageStatus.status !== "saved"))
-      throw new ConvexError(`Some image of story is not saved`);
+      throw new ConvexError(`Some images of story is not generated.`);
     await Promise.all(
       storySegment.map(async (s) => {
         if (s.imageStatus.status === "saved") {
-          //check if the voice is created
-          const otherVideosFromThisStory = await ctx.db
-            .query("videos")
-            .filter((q) => q.eq(q.field("storyId"), story._id))
-            .collect();
-          const otherVideoSegmentsWithSameText = await filter(
-            ctx.db.query("videoSegments"),
-            (segment) => {
-              return (
-                otherVideosFromThisStory
-                  .map((a) => a._id)
-                  .includes(segment.videoId) &&
-                segment.voiceStatus.status === "saved"
-              );
+          const videoSegmentId = await ctx.db.insert("videoSegments", {
+            imagePrompt: s.imagePrompt,
+            imageUrl: s.imageStatus.imageUrl,
+            order: s.order,
+            text: s.text,
+            videoId,
+            videoStatus: {
+              status: "pending",
+              details: "Waiting for voice ...",
             },
-          )
-            .filter((q) => q.eq(q.field("text"), s.text))
-            .collect();
-          if (
-            otherVideoSegmentsWithSameText.length > 0 &&
-            process.env.CACHE_GENERATE_VOICE === "true"
-          ) {
-            const segmentWithSameTextAndImage =
-              otherVideoSegmentsWithSameText.find(
-                (os) =>
-                  s.imageStatus.status === "saved" &&
-                  os.imageUrl === s.imageStatus.imageUrl,
-              );
-            type videoSegmentWithVoiceSaved = Doc<"videoSegments"> & {
-              voiceStatus: {
-                status: "saved";
-                elapsedMs: number;
-                publicId: string;
-                voiceDuration: number;
-                voiceUrl: string;
-                voiceSrt: string;
-              };
-            };
-            const choosingSegmentToCopy = (segmentWithSameTextAndImage ??
-              otherVideoSegmentsWithSameText[0]) as videoSegmentWithVoiceSaved;
-            //copy to new videoSegment
-            const videoSegmentId = await ctx.db.insert("videoSegments", {
-              videoId,
-              order: s.order,
-              videoStatus: {
-                status: "pending",
-                details: "Creating ...",
-              },
-              voiceStatus: {
-                status: "cached",
-                publicId: (
-                  choosingSegmentToCopy.voiceStatus as { publicId: string }
-                ).publicId,
-                voiceDuration: (
-                  choosingSegmentToCopy.voiceStatus as { voiceDuration: number }
-                ).voiceDuration,
-                voiceUrl: (
-                  choosingSegmentToCopy.voiceStatus as { voiceUrl: string }
-                ).voiceUrl,
-                voiceSrt: (
-                  choosingSegmentToCopy.voiceStatus as { voiceSrt: string }
-                ).voiceSrt,
-              },
-              text: s.text,
-              imagePrompt: s.imagePrompt,
-              imageUrl: s.imageStatus.imageUrl,
-            });
-            //directly call generateSegmentVideo
-            //chheck if new segment image  === some
-            if (
-              segmentWithSameTextAndImage &&
-              process.env.CACHE_GENERATE_SEGMENT_VIDEO === "true"
-            ) {
-              await ctx.db.patch(videoSegmentId, {
-                videoStatus: {
-                  status: "cached",
-                  publicId: (
-                    segmentWithSameTextAndImage.videoStatus as {
-                      publicId: string;
-                    }
-                  ).publicId,
-                  videoUrl: (
-                    segmentWithSameTextAndImage.videoStatus as {
-                      videoUrl: string;
-                    }
-                  ).videoUrl,
+            voiceStatus: { status: "pending", details: "Creating voice ..." },
+          });
+          await ctx.scheduler.runAfter(
+            0,
+            internal.sqs.sendSqsMessageGenerateVoice,
+            {
+              attributes: {
+                segmentId: {
+                  DataType: "String",
+                  StringValue: videoSegmentId,
                 },
-              });
-              await ctx.scheduler.runAfter(
-                0,
-                internal.videoSegments.checkCanProcessFinalVideo,
-                { videoId },
-              );
-            } else
-              await ctx.scheduler.runAfter(
-                0,
-                internal.sqs.sendSqsMessageGenerateSegmentVideo,
-                {
-                  message: {
-                    imageUrl: s.imageStatus.imageUrl,
-                    segmentId: videoSegmentId,
-                    voiceUrl: choosingSegmentToCopy.voiceStatus.voiceUrl,
-                    voiceDuration:
-                      choosingSegmentToCopy.voiceStatus.voiceDuration,
-                    voiceSrt: choosingSegmentToCopy.voiceStatus.voiceSrt,
-                  },
-                },
-              );
-          } else {
-            const videoSegmentId = await ctx.db.insert("videoSegments", {
-              imagePrompt: s.imagePrompt,
-              imageUrl: s.imageStatus.imageUrl,
-              order: s.order,
-              text: s.text,
-              videoId,
-              videoStatus: {
-                status: "pending",
-                details: "Waiting for voice ...",
+                videoId: { DataType: "String", StringValue: videoId },
               },
-              voiceStatus: { status: "pending", details: "Creating voice ..." },
-            });
-            await ctx.scheduler.runAfter(
-              0,
-              internal.sqs.sendSqsMessageGenerateVoice,
-              {
-                attributes: {
-                  segmentId: {
-                    DataType: "String",
-                    StringValue: videoSegmentId,
-                  },
-                  videoId: { DataType: "String", StringValue: videoId },
-                },
-                message: s.text,
-              },
-            );
-          }
+              message: s.text,
+            },
+          );
         } else
           throw new ConvexError(
             `ImageUrl of storySegment with id ${s._id} is empty `,
@@ -209,7 +141,7 @@ export const create = mutation({
       }),
     );
 
-    return 123;
+    return videoId;
   },
 });
 
