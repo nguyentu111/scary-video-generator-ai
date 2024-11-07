@@ -33,7 +33,7 @@ export const VideoFormatPopup = ({
     });
     setIsSubmitting(false);
     setClose();
-    router.push("/stories/" + params.storyId);
+    router.push(`/stories/${params.storyId as string}`);
   };
 
   return (
